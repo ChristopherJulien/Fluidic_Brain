@@ -3,6 +3,7 @@ from sensirion_shdlc_driver.command import ShdlcCommand
 from struct import pack, unpack
 from time import sleep
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Sensor Measurement Commands
 class Get_Sensor_Status(ShdlcCommand):
@@ -219,13 +220,15 @@ class SLS_1500Device(ShdlcDeviceBase):
         # Split the raw response into two-byte chunks
         byte_chunks = [raw_response[i:i+2] for i in range(0, len(raw_response), 2)]
         # Convert each chunk to a signed integer
-        measurements = [unpack('h', chunk)[0] for chunk in byte_chunks]
+        measurements = [unpack('>h', chunk)[0] for chunk in byte_chunks]
+        # measurements = [int.from_bytes(chunk, 'big', signed=True) for chunk in byte_chunks]
         print(measurements)
         if plot:
             fig, ax = plt.subplots(1,1)
             ax.set_ylim(-33000, 33000)
             ax.plot(measurements)
             plt.show()
+        return measurements
     
     def Set_Measurement_Type(self):
         self.execute(Set_Measurement_Type())
@@ -299,25 +302,33 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Resolution()
     # print("Get_Flow_Unit")
     # fs.Get_Flow_Unit()
-    # print("Get_Linearization")x``
+    # print("Get_Linearization")
     # fs.Get_Linearization()
     # print("Get_Scale_Factor")
     # fs.Get_Scale_Factor()
     # print("Get_Measurement_Data_Type")
     # fs.Get_Measurement_Data_Type()
-    # print("Get_Offset")
+    
 
 
     # Single Measurement
     # fs.Start_Single_Measurement()
-    # sleep(0.05) #secondes
+    # sleep(0.5) #secondes
     # fs.Get_Single_Measurement()
     
     # Continuous Measurement
     fs.Start_Continuous_Measurement()
     sleep(5) #secondes
     fs.Get_Continuous_Measurement_Status()
-    fs.Get_Measurement_Buffer(plot=True)
+    buffer_data = fs.Get_Measurement_Buffer(plot=False)
+    fs.Stop_Continuous_measurement()
+    
+    # # Saving Data to CSV
+    df = pd.DataFrame(buffer_data)
+    df.to_csv('output.csv', index=False, header=False)
+
+
+
 
   
 
