@@ -90,7 +90,23 @@ class Get_Measurement_Type(ShdlcCommand):
 class Get_Resolution(ShdlcCommand):
     def __init__(self):
         super(Get_Resolution, self).__init__(
-            id=0x41,  # Command ID as specified in the device documentation
+            id=0x42,  # Command ID as specified in the device documentation
+            data=b"02",  # Payload data
+            max_response_time=0.2,  # Maximum response time in Seconds
+        )
+
+class Set_Heater_Mode(ShdlcCommand):
+    def __init__(self, heater_mode):
+        super(Set_Heater_Mode, self).__init__(
+            id=0x42,  # Command ID as specified in the device documentation
+            data=b"\x00",  # Payload data
+            max_response_time=0.2,  # Maximum response time in Seconds
+        )
+
+class Get_Heater_Mode(ShdlcCommand):
+    def __init__(self):
+        super(Get_Heater_Mode, self).__init__(
+            id=0x42,  # Command ID as specified in the device documentation
             data=b"",  # Payload data
             max_response_time=0.2,  # Maximum response time in Seconds
         )
@@ -287,6 +303,16 @@ class SLS_1500Device(ShdlcDeviceBase):
     def Sensor_Reset(self):
         self.execute(Sensor_Reset())
         print("Sensor reset")
+
+    def Set_Heater_Mode(self):
+        self.execute(Set_Heater_Mode())
+        print("Heater mode set")
+    
+    def Get_Heater_Mode(self):
+        raw_response = self.execute(Get_Heater_Mode())
+        print("Raw response: ", format(raw_response))
+        uint8 = unpack('>B', raw_response)
+        print("Response Unsigned Integer: {}".format(uint8))
     
 
 
@@ -308,6 +334,8 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Scale_Factor()
     # print("Get_Measurement_Data_Type")
     # fs.Get_Measurement_Data_Type()
+    # print("Get_Heater_Mode")
+    # fs.Get_Heater_Mode()
     
 
 
@@ -316,16 +344,16 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # sleep(0.5) #secondes
     # fs.Get_Single_Measurement()
     
-    # Continuous Measurement
-    fs.Start_Continuous_Measurement()
-    sleep(5) #secondes
-    fs.Get_Continuous_Measurement_Status()
-    buffer_data = fs.Get_Measurement_Buffer(plot=False)
-    fs.Stop_Continuous_measurement()
+    # # Continuous Measurement
+    # fs.Start_Continuous_Measurement()
+    # sleep(5) #secondes
+    # fs.Get_Continuous_Measurement_Status()
+    # buffer_data = fs.Get_Measurement_Buffer(plot=True)
+    # fs.Stop_Continuous_measurement()
     
-    # # Saving Data to CSV
-    df = pd.DataFrame(buffer_data)
-    df.to_csv('output.csv', index=False, header=False)
+    # # # Saving Data to CSV
+    # df = pd.DataFrame(buffer_data)
+    # df.to_csv('output.csv', index=False, header=False)
 
 
 
