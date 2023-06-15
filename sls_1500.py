@@ -2,6 +2,7 @@ from sensirion_shdlc_driver import ShdlcSerialPort, ShdlcConnection, ShdlcDevice
 from sensirion_shdlc_driver.command import ShdlcCommand
 from struct import pack, unpack
 from time import sleep
+import matplotlib.pyplot as plt
 
 # Sensor Measurement Commands
 class Get_Sensor_Status(ShdlcCommand):
@@ -212,7 +213,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         self.execute(Stop_Continuous_Measurement())
         print("Continuous measurement stopped")
     
-    def Get_Measurement_Buffer(self):
+    def Get_Measurement_Buffer(self, plot=False):
         raw_response = self.execute(Get_Measurement_Buffer())
         print("Raw response: ", format(raw_response))
         # Split the raw response into two-byte chunks
@@ -220,6 +221,11 @@ class SLS_1500Device(ShdlcDeviceBase):
         # Convert each chunk to a signed integer
         measurements = [unpack('h', chunk)[0] for chunk in byte_chunks]
         print(measurements)
+        if plot:
+            fig, ax = plt.subplots(1,1)
+            ax.set_ylim(-33000, 33000)
+            ax.plot(measurements)
+            plt.show()
     
     def Set_Measurement_Type(self):
         self.execute(Set_Measurement_Type())
@@ -230,7 +236,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Raw response: ", format(raw_response))
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
-    
+        
     def Get_Resolution(self):
         raw_response = self.execute(Get_Resolution())
         print("Raw response: ", format(raw_response))
@@ -293,7 +299,7 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Resolution()
     # print("Get_Flow_Unit")
     # fs.Get_Flow_Unit()
-    # print("Get_Linearization")
+    # print("Get_Linearization")x``
     # fs.Get_Linearization()
     # print("Get_Scale_Factor")
     # fs.Get_Scale_Factor()
@@ -311,7 +317,7 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs.Start_Continuous_Measurement()
     sleep(5) #secondes
     fs.Get_Continuous_Measurement_Status()
-    fs.Get_Measurement_Buffer()
+    fs.Get_Measurement_Buffer(plot=True)
 
   
 
