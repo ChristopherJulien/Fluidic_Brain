@@ -150,7 +150,6 @@ class Get_Flow_Unit(ShdlcCommand):
             data=b"",  # False: Raw Measurement, True: Linearized Measurement
             max_response_time=0.2,  # Maximum response time in Seconds
         )
-        
 class Get_Scale_Factor(ShdlcCommand):
     def __init__(self):
         super(Get_Scale_Factor, self).__init__(
@@ -193,26 +192,7 @@ class Sensor_Reset(ShdlcCommand):
     #     fig, ax = plt.subplots(1,1)
     #     ax.set_ylim(-33000, 33000)
     #     ax.plot(measured_2bytes)
-    
-def decode_unit(bitcode):
-    '''
-    Decode sensor flow unit bitcode into string.
-    '''
-    intcode = int.from_bytes(bitcode, 'big', signed=False) 
-    vol_unit_code = int(intcode/256)
-    time_unit_code = int((intcode%256)/16)
-    dim_unit_code = int(intcode%16)
-    
-    time_dict = {0: r'', 1: r'$\mu$ s$^{-1}$', 2: r'ms$^{-1}$', 
-                 3: r's$^{-1}$', 4: r'min$^{-1}$'}
-    time_dict = {0: r'', 1: r'/$\mu$s$', 2: r'/ms', 
-                 3: r'/s', 4: r'/min'}
-    vol_dict = {0: r'L', 1:'L', 8:'L', 9:'g'}
-    
-    dim_dict = {3: 'n', 4: '$\mu$', 5:'m', 6:'c', 7:'d',
-                8:'', 9:'da', 10:'h', 11:'k', 12:'M', 13:'G'}
-    unit_string = dim_dict[dim_unit_code] + vol_dict[vol_unit_code] + time_dict[time_unit_code]
-    return unit_string
+
 
 class SLS_1500Device(ShdlcDeviceBase):
     def __init__(self, connection, slave_address):
@@ -309,14 +289,11 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Response Unsigned Integer: {}".format(uint16))
         return raw_response
 
-    def Get_Scale_Factor(self, vocal=False):
+    def Get_Scale_Factor(self):
         raw_response = self.execute(Get_Scale_Factor())
-        # uint16 = unpack('>H', raw_response)
-        scale_factor = int.from_bytes(raw_response, 'big', signed=False)
-        if vocal:
-            print("Raw response: ", format(raw_response))
-            print("Response Unsigned Integer: {}".format(scale_factor))
-        return scale_factor
+        print("Raw response: ", format(raw_response))
+        uint16 = unpack('>H', raw_response)
+        print("Response Unsigned Integer: {}".format(uint16))
     
     def Get_Measurement_Data_Type(self):
         raw_response = self.execute(Get_Measurement_Data_Type())
@@ -338,24 +315,44 @@ class SLS_1500Device(ShdlcDeviceBase):
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
     
+def decode_unit(bitcode):
+    intcode = int.from_bytes(bitcode, 'big', signed=False) 
+    vol_unit_code = int(intcode/256)
+    time_unit_code = int((intcode%256)/16)
+    dim_unit_code = int(intcode%16)
+    
+    time_dict = {0: r'', 1: r'$\mu$ s$^{-1}$', 2: r'ms$^{-1}$', 
+                 3: r's$^{-1}$', 4: r'min$^{-1}$'}
+    time_dict = {0: r'', 1: r'/$\mu$s$', 2: r'/ms', 
+                 3: r'/s', 4: r'/min'}
+    vol_dict = {0: r'L', 1:'L', 8:'L', 9:'g'}
+    
+    dim_dict = {3: 'n', 4: '$\mu$', 5:'m', 6:'c', 7:'d',
+                8:'', 9:'da', 10:'h', 11:'k', 12:'M', 13:'G'}
+    unit_string = dim_dict[dim_unit_code] + vol_dict[vol_unit_code] + time_dict[time_unit_code]
+    return unit_string
 
 
 with ShdlcSerialPort(port='COM10', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
 
-    # Check and Start-Up
-    # print("Get_Sensor_Status")
-    # fs.Get_Sensor_Status()
-    # print("Get_Measurement_Type")
-    # fs.Get_Measurement_Type()
-    # print("Get_Resolution")
-    # fs.Get_Resolution()
-    # print("Get_Flow_Unit")
-    # fs.Get_Flow_Unit()
+#     # Check and Start-Up
+#     # print("Get_Sensor_Status")
+#     # fs.Get_Sensor_Status()
+#     # print("Get_Measurement_Type")
+#     # fs.Get_Measurement_Type()
+#     # print("Get_Resolution")
+#     # fs.Get_Resolution()
+    print("Get_Flow_Unit")
+    bitcode = fs.Get_Flow_Unit()
+    unit_string = decode_unit(bitcode)
+    print(unit_string)
+    
+#     mycode = b'\x08E'
     # print("Get_Linearization")
     # fs.Get_Linearization()
-    print("Get_Scale_Factor")
-    scale_factor = fs.Get_Scale_Factor()
+    # print("Get_Scale_Factor")
+    # fs.Get_Scale_Factor()
     # print("Get_Measurement_Data_Type")
     # fs.Get_Measurement_Data_Type()
     # print("Get_Heater_Mode")
