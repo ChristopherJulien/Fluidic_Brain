@@ -406,12 +406,3 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # Continuous Measurement truncated to intervals of 10 seconds
     fs.Measure_and_Save(40,plot=True)
     
-    
-
-
-
-
-
-  
-
-  
