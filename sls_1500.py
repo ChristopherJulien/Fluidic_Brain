@@ -344,7 +344,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         # Calculate the number of buffer retrievals needed to get the data for the specified duration of a buffer size of 100 measurements
         return number_of_measurment // 100
     
-    def Measure_and_Save(self, Measurement_duration_seconds,plot=False):
+    def Measure_and_Save(self, Measurement_duration_seconds, plot=False):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Measurement and Save started ", Measurement_duration_seconds)
         intervals = self.Get_buffer_retreivals_from_duration_100ms(Measurement_duration_seconds)
@@ -362,12 +362,19 @@ class SLS_1500Device(ShdlcDeviceBase):
                 for i in range(intervals-1):
                     sleep(10) #secondes
                     buffer_data.extend(self.Get_Measurement_Buffer())       
-                self.Stop_Continuous_measurement()
+            
+            self.Stop_Continuous_measurement()
             break
 
         # Saving Data to CSV
         df = pd.DataFrame(buffer_data)
         df.to_csv('output.csv', index=False, header=False)
+
+        if plot:
+            fig, ax = plt.subplots(1,1)
+            ax.set_ylim(-33000, 33000)
+            ax.plot(buffer_data)
+            plt.show()
 
 with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
@@ -397,7 +404,7 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Single_Measurement()
     
     # Continuous Measurement truncated to intervals of 10 seconds
-    fs.Measure_and_Save(10)
+    fs.Measure_and_Save(40,plot=True)
     
     
 
