@@ -369,7 +369,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         df = pd.DataFrame(buffer_data)
         df.to_csv('output.csv', index=False, header=False)
 
-with ShdlcSerialPort(port='COM10', baudrate=115200) as port:
+with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
 
     # Check and Start-Up
@@ -383,22 +383,21 @@ with ShdlcSerialPort(port='COM10', baudrate=115200) as port:
     # fs.Get_Flow_Unit()
     # print("Get_Linearization")
     # fs.Get_Linearization()
-    print("Get_Scale_Factor")
-    scale_factor = fs.Get_Scale_Factor()
+    # print("Get_Scale_Factor")
+    # scale_factor = fs.Get_Scale_Factor()
     # print("Get_Measurement_Data_Type")
     # fs.Get_Measurement_Data_Type()
     # print("Get_Heater_Mode")
     # fs.Get_Heater_Mode()
     
 
-
     # Single Measurement
     # fs.Start_Single_Measurement()
     # sleep(0.5) #secondes
     # fs.Get_Single_Measurement()
     
-    # Continuous Measurement for given duration as interval of 10 seconds
-    fs.Measure_and_Save(60)
+    # Continuous Measurement truncated to intervals of 10 seconds
+    fs.Measure_and_Save(10)
     
     
 
