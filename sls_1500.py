@@ -313,8 +313,37 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Raw response: ", format(raw_response))
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
-    
 
+    def Get_buffer_retreivals_from_duration_100ms(self, Measurement_duration_seconds):
+        # Calculate the number of measurements needed for the specified duration of a buffer size of 100 measurements
+        number_of_measurment = Measurement_duration_seconds*1000 // 100
+        # Calculate the number of buffer retrievals needed to get the data for the specified duration of a buffer size of 100 measurements
+        return number_of_measurment // 100
+    
+    def Measure_and_Save(self, Measurement_duration_seconds,plot=False):
+        # Measure and save the data for the specified duration of a buffer size of 100 measurements
+        print("Measurement and Save started ", Measurement_duration_seconds)
+        intervals = self.Get_buffer_retreivals_from_duration_100ms(Measurement_duration_seconds)
+        print("Number of buffer retrievals needed: ",intervals)
+
+        buffer_data = []
+
+        while True:
+            self.Start_Continuous_Measurement()
+            sleep(10) #secondes
+            buffer_data = fs.Get_Measurement_Buffer()
+
+            # Get the data from the buffer in intervals and 
+            if intervals > 1:
+                for i in range(intervals-1):
+                    sleep(10) #secondes
+                    buffer_data.extend(self.Get_Measurement_Buffer())       
+                self.Stop_Continuous_measurement()
+            break
+
+        # Saving Data to CSV
+        df = pd.DataFrame(buffer_data)
+        df.to_csv('output.csv', index=False, header=False)
 
 with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
@@ -344,16 +373,11 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # sleep(0.5) #secondes
     # fs.Get_Single_Measurement()
     
-    # # Continuous Measurement
-    # fs.Start_Continuous_Measurement()
-    # sleep(5) #secondes
-    # fs.Get_Continuous_Measurement_Status()
-    # buffer_data = fs.Get_Measurement_Buffer(plot=True)
-    # fs.Stop_Continuous_measurement()
+    # Continuous Measurement for given duration as interval of 10 seconds
+    fs.Measure_and_Save(60)
     
-    # # # Saving Data to CSV
-    # df = pd.DataFrame(buffer_data)
-    # df.to_csv('output.csv', index=False, header=False)
+    
+
 
 
 
