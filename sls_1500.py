@@ -44,7 +44,7 @@ class Start_Continuous_Measurement_and_Set_Resolution(ShdlcCommand):
     def __init__(self):
         super(Start_Continuous_Measurement_and_Set_Resolution, self).__init__(
             id=0x33,  # Command ID as specified in the device documentation
-            data = b"\x00\x64",  # Payload with interaval of 64Hex = 100DEC ms
+            data = b"\x00\x64",  # Payload with interaval of 64Hex = 100DEC ms and 
             max_response_time=0.001,  # Maximum response time in Seconds
         )
 
@@ -100,8 +100,8 @@ class Get_Measurement_Type(ShdlcCommand):
 class Get_Resolution(ShdlcCommand):
     def __init__(self):
         super(Get_Resolution, self).__init__(
-            id=0x42,  # Command ID as specified in the device documentation
-            data=b"02",  # Payload data
+            id=0x41,  # Command ID as specified in the device documentation
+            data=b"",  # Payload data
             max_response_time=0.2,  # Maximum response time in Seconds
         )
 
@@ -168,6 +168,7 @@ class Get_Scale_Factor(ShdlcCommand):
             data=b"",  # False: Raw Measurement, True: Linearized Measurement
             max_response_time=0.2,  # Maximum response time in Seconds
         )
+
 class Get_Measurement_Data_Type(ShdlcCommand):
     def __init__(self):
         super(Get_Measurement_Data_Type, self).__init__(
@@ -433,8 +434,8 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Measurement_Type()
     # print("Get_Resolution")
     # fs.Get_Resolution()
-    # print("Get_Flow_Unit")
-    # fs.Get_Flow_Unit()
+    print("Get_Flow_Unit")
+    fs.Get_Flow_Unit()
     # print("Get_Linearization")
     # fs.Get_Linearization()
     # print("Get_Scale_Factor")
@@ -453,24 +454,29 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # Continuous Measurement with Buffer
     # fs.Measure_and_Save(1,plot=True)
 
-    # Continuous Measurement 
-    fs.Start_Continuous_Measurement_and_Set_Resolution()
-    sleep(12) #secondes
-    buffer_data = fs.Get_Measurement_Buffer()
-    fs.Stop_Continuous_measurement()
-    fig, ax = plt.subplots(1,1)
-    ax.set_ylim(-33000, 33000)
-    ax.plot(buffer_data)
-    plt.legend(fontsize=16, frameon=False)
-    plt.tight_layout()
-    plt.show()
+
+# Get Resolution
+# Set resolution
+# Get Flow Unit
+
+    # # Continuous Measurement 
+    # fs.Start_Continuous_Measurement_and_Set_Resolution()
+    # sleep(13) #secondes
+    # buffer_data = fs.Get_Measurement_Buffer()
+    # # Get Continuous Measurement Status
+    # fs.Stop_Continuous_measurement()
+    # fig, ax = plt.subplots(1,1)
+    # ax.set_ylim(-33000, 33000)
+    # ax.plot(buffer_data)
+    # plt.legend(fontsize=16, frameon=False)
+    # plt.tight_layout()
+    # plt.show()
     
-    # Saving Data to CSV
-    df = pd.DataFrame(buffer_data)
-    df.to_csv('output.csv', index=False, header=False)
+    # # Saving Data to CSV
+    # df = pd.DataFrame(buffer_data)
+    # df.to_csv('output.csv', index=False, header=False)
 
 
     
 
             
-    
