@@ -5,7 +5,17 @@ from time import sleep
 import matplotlib.pyplot as plt
 import pandas as pd
 
+MEASURING_INTERVAL = 1 # seconds
+
 # Sensor Measurement Commands
+class Get_Version(ShdlcCommand):
+    def __init__(self):
+        super(Get_Version, self).__init__(
+            id=0xD1,  # Get device information
+            data=b"",  # The payload data to send, 1 byte; 3 is serial number
+            max_response_time=0.2,  # Maximum response time in Seconds
+    )
+
 class Get_Sensor_Status(ShdlcCommand):
     def __init__(self,):
         super(Get_Sensor_Status, self).__init__(
@@ -22,7 +32,7 @@ class Start_Single_Measurement(ShdlcCommand):
             max_response_time=0.2,  # Maximum response time in Seconds
     )
 
-class Get_Single_Measurement(ShdlcCommand):
+class Get_Single_Measurement(ShdlcCommand): 
     def __init__(self,):
         super(Get_Single_Measurement, self).__init__(
             id=0x32,  # Get device information
@@ -30,12 +40,12 @@ class Get_Single_Measurement(ShdlcCommand):
             max_response_time=0.2,  # Maximum response time in Seconds
     )
         
-class Start_Continuous_Measurement(ShdlcCommand):
+class Start_Continuous_Measurement_and_Set_Resolution(ShdlcCommand):
     def __init__(self):
-        super(Start_Continuous_Measurement, self).__init__(
+        super(Start_Continuous_Measurement_and_Set_Resolution, self).__init__(
             id=0x33,  # Command ID as specified in the device documentation
-            data=b"\x01",  # Payload data
-            max_response_time=0.2,  # Maximum response time in Seconds
+            data = b"\x00\x64",  # Payload with interaval of 64Hex = 100DEC ms
+            max_response_time=0.001,  # Maximum response time in Seconds
         )
 
 class Get_Continuous_Measurement_Status(ShdlcCommand):
@@ -230,6 +240,17 @@ class SLS_1500Device(ShdlcDeviceBase):
 
         plt.show()
 
+    def Get_Version(self):
+        raw_response = self.execute(Get_Version())
+        # print("Raw response: ", format(raw_response))
+        firmware_Major, firmware_Minor,firmware_debug, hardware_Major, hardware_Minor, shdl_major, shdl_minor  = unpack('>BBBBBBB', raw_response)
+        print("Firmware: {}.{}".format(firmware_Major,firmware_Minor))
+        print("Firmware Debug: {}".format(firmware_debug))
+        print("Hardware: {}.{}".format(hardware_Major,hardware_Minor))
+        print("SHDL: {}.{}".format(shdl_major,shdl_minor))
+    
+        
+
     def Get_Sensor_Status(self):
         raw_response = self.execute(Get_Sensor_Status())
         print("Raw response: ", format(raw_response))
@@ -248,8 +269,8 @@ class SLS_1500Device(ShdlcDeviceBase):
         int16 = unpack('>h', raw_response)
         print("Response signed Integer: {}".format(int16))
     
-    def Start_Continuous_Measurement(self):
-        self.execute(Start_Continuous_Measurement())
+    def Start_Continuous_Measurement_and_Set_Resolution(self):
+        self.execute(Start_Continuous_Measurement_and_Set_Resolution())
         print("Continuous measurement started")
     
     def Get_Continuous_Measurement_Status(self):
@@ -350,29 +371,29 @@ class SLS_1500Device(ShdlcDeviceBase):
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
 
-    def Get_buffer_retreivals_from_duration_100ms(self, Measurement_duration_seconds):
+    def Get_buffer_retreivals(self, Measurement_duration_seconds):
         # Calculate the number of measurements needed for the specified duration of a buffer size of 100 measurements
-        number_of_measurment = Measurement_duration_seconds*1000 // 100
+        number_of_measurment = Measurement_duration_seconds*1000 // 10
         # Calculate the number of buffer retrievals needed to get the data for the specified duration of a buffer size of 100 measurements
         return number_of_measurment // 100
     
     def Measure_and_Save(self, Measurement_duration_seconds, plot=False):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Measurement and Save started ", Measurement_duration_seconds)
-        intervals = self.Get_buffer_retreivals_from_duration_100ms(Measurement_duration_seconds)
+        intervals = self.Get_buffer_retreivals(Measurement_duration_seconds)
         print("Number of buffer retrievals needed: ",intervals)
 
         buffer_data = []
 
         while True:
             self.Start_Continuous_Measurement()
-            sleep(10) #secondes
+            sleep(MEASURING_INTERVAL) #secondes
             buffer_data = fs.Get_Measurement_Buffer()
 
             # Get the data from the buffer in intervals and 
             if intervals > 1:
                 for i in range(intervals-1):
-                    sleep(10) #secondes
+                    sleep(MEASURING_INTERVAL) #secondes
                     buffer_data.extend(self.Get_Measurement_Buffer())       
             
             self.Stop_Continuous_measurement()
@@ -402,7 +423,10 @@ class SLS_1500Device(ShdlcDeviceBase):
 with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
 
+
     # Check and Start-Up
+    # print("Get_Version")
+    # fs.Get_Version()
     # print("Get_Sensor_Status")
     # fs.Get_Sensor_Status()
     # print("Get_Measurement_Type")
@@ -426,6 +450,27 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # sleep(0.5) #secondes
     # fs.Get_Single_Measurement()
     
-    # Continuous Measurement truncated to intervals of 10 seconds
-    fs.Measure_and_Save(10,plot=True)
+    # Continuous Measurement with Buffer
+    # fs.Measure_and_Save(1,plot=True)
+
+    # Continuous Measurement 
+    fs.Start_Continuous_Measurement_and_Set_Resolution()
+    sleep(12) #secondes
+    buffer_data = fs.Get_Measurement_Buffer()
+    fs.Stop_Continuous_measurement()
+    fig, ax = plt.subplots(1,1)
+    ax.set_ylim(-33000, 33000)
+    ax.plot(buffer_data)
+    plt.legend(fontsize=16, frameon=False)
+    plt.tight_layout()
+    plt.show()
+    
+    # Saving Data to CSV
+    df = pd.DataFrame(buffer_data)
+    df.to_csv('output.csv', index=False, header=False)
+
+
+    
+
+            
     
