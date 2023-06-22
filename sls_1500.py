@@ -218,6 +218,18 @@ class SLS_1500Device(ShdlcDeviceBase):
     def __init__(self, connection, slave_address):
         super(SLS_1500Device, self).__init__(connection, slave_address)
 
+    def Plot_Flow_CSV(self, filename):
+        df = pd.read_csv(filename, header=None)
+        # df.columns = ['time', 'flow']
+        # df.plot(x='time', y='flow')
+        # ax.set_xlabel("Time [s]", fontsize=20)
+        # ax.set_ylabel("Angles [deg.]", fontsize=20)
+        # ax.tick_params(axis='both',which='major',labelsize=16)
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
+
+        plt.show()
+
     def Get_Sensor_Status(self):
         raw_response = self.execute(Get_Sensor_Status())
         print("Raw response: ", format(raw_response))
@@ -371,10 +383,21 @@ class SLS_1500Device(ShdlcDeviceBase):
         df.to_csv('output.csv', index=False, header=False)
 
         if plot:
+            # self.Plot_Flow_CSV('output.csv')
+
             fig, ax = plt.subplots(1,1)
             ax.set_ylim(-33000, 33000)
             ax.plot(buffer_data)
+            # ax.set_xlabel("Time [s]", fontsize=20)
+            # ax.set_ylabel("Flow [?.]", fontsize=20)
+            # ax.tick_params(axis='both',which='major',labelsize=16)
+            # ax.spines['top'].set_visible(False)
+            # ax.spines['right'].set_visible(False)
+        
+            plt.legend(fontsize=16, frameon=False)
+            plt.tight_layout()
             plt.show()
+    
 
 with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
@@ -404,5 +427,5 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Single_Measurement()
     
     # Continuous Measurement truncated to intervals of 10 seconds
-    fs.Measure_and_Save(40,plot=True)
+    fs.Measure_and_Save(10,plot=True)
     
