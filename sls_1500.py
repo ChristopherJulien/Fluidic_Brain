@@ -5,8 +5,9 @@ from time import sleep
 import matplotlib.pyplot as plt
 import pandas as pd
 
-MEASURING_INTERVAL = 1 # seconds
+MEASURING_INTERVAL = 10 # seconds
 _100ms_HEX =b"\x00\x64"
+SCALE_FACTOR = 500
 
 # Sensor Measurement Commands
 class Get_Version(ShdlcCommand):
@@ -139,7 +140,7 @@ class Get_Heater_Mode(ShdlcCommand):
         )
 
 class Set_Calib_Field(ShdlcCommand):
-    def __init__(self, calib_field = b"\x00"):
+    def __init__(self, calib_field):
         super(Set_Calib_Field, self).__init__(
             id=0x43,  # Command ID as specified in the device documentation
             data=calib_field,  # Payload data
@@ -264,9 +265,10 @@ class SLS_1500Device(ShdlcDeviceBase):
 
     def Plot_Flow_CSV(self, filename):
         df = pd.read_csv(filename, header=None)
+        df = df.div(SCALE_FACTOR) #divide by scale factor
         fig, ax = plt.subplots(1,1)
-        ax.set_ylim(-33000, 33000)
-        ax.plot(buffer_data)
+        ax.set_ylim(-60, 60)
+        ax.plot(df)
         ax.set_xlabel("Time [ms]", fontsize=20)
         ax.set_ylabel("Flow [mL/min]", fontsize=20)
         ax.tick_params(axis='both',which='major',labelsize=16)
@@ -275,15 +277,6 @@ class SLS_1500Device(ShdlcDeviceBase):
     
         plt.legend(fontsize=16, frameon=False)
         plt.tight_layout()
-        plt.show()
-        # df.columns = ['time', 'flow']
-        # df.plot(x='time', y='flow')
-        # ax.set_xlabel("Time [s]", fontsize=20)
-        # ax.set_ylabel("Angles [deg.]", fontsize=20)
-        # ax.tick_params(axis='both',which='major',labelsize=16)
-        # ax.spines['top'].set_visible(False)
-        # ax.spines['right'].set_visible(False)
-
         plt.show()
 
     def Get_Version(self):
@@ -379,7 +372,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Calibration field set")
     
     def Get_Calib_Field(self):
-        raw_response = self.execute(Get_Resolution())
+        raw_response = self.execute(Get_Calib_Field())
         print("Raw response: ", format(raw_response))
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
@@ -442,17 +435,18 @@ class SLS_1500Device(ShdlcDeviceBase):
     def Measure_and_Save(self, duration, interval, plot=None):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Measurement and Save started %ds " %duration)
-
+        
         buffer_data = []
-        intervals = duration
+        retrievals = duration //10
+
         while True:
-            self.Start_Continuous_Measurement(interval)
+            self.Start_Continuous_Measurement(retrievals)
             sleep(MEASURING_INTERVAL) #secondes
             df = pd.DataFrame(fs.Get_Measurement_Buffer())
 
             # Get the data from the buffer in intervals and 
-            if intervals > 1:
-                for i in range(intervals-1):
+            if retrievals > 1:
+                for i in range(retrievals-1):
                     sleep(MEASURING_INTERVAL) #secondes
                     df = df._append(pd.DataFrame(fs.Get_Measurement_Buffer()),ignore_index=True)  
             
@@ -473,7 +467,7 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Set_Resolution(b"\x10") # 16 bit
     # fs.Get_Resolution()
     # fs.Set_Calib_Field(b"\x00") # not sure exactly what calibration field does
-    fs.Get_Calib_Field()
+    # fs.Get_Calib_Field()
     # fs.Set_Linearization(False)
     # fs.Get_Linearization()
 
@@ -507,7 +501,10 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Get_Single_Measurement()
     
     # Multiple Continuous Measurement with Buffer
-    # fs.Measure_and_Save(duration=4, interval=_100ms_HEX, plot=False)
+    fs.Measure_and_Save(duration=4, interval=_100ms_HEX, plot=False)
+    
+    # Testing Plotting Data 
+    # fs.Plot_Flow_CSV('output.csv')
 
     # Single Continuous Measurement 
     # fs.Start_Continuous_Measurement(b"\x00\x64") # 100ms interval
