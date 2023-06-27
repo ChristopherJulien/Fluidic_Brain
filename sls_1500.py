@@ -2,8 +2,10 @@ from sensirion_shdlc_driver import ShdlcSerialPort, ShdlcConnection, ShdlcDevice
 from sensirion_shdlc_driver.command import ShdlcCommand
 from struct import pack, unpack
 from time import sleep
+import time
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
 MEASURING_INTERVAL = 10 # seconds
 _100ms_HEX =b"\x00\x64"
@@ -264,12 +266,14 @@ class SLS_1500Device(ShdlcDeviceBase):
         super(SLS_1500Device, self).__init__(connection, slave_address)
 
     def Plot_Flow_CSV(self, filename):
-        df = pd.read_csv(filename, header=None)
-        df = df.div(SCALE_FACTOR) #divide by scale factor
+        df = pd.read_csv(filename)
+        df['mL']=df['mL'].div(SCALE_FACTOR) #divide by scale factor
+        df['ms']=df['ms'].div(1000) #divide by scale factor
         fig, ax = plt.subplots(1,1)
         ax.set_ylim(-60, 60)
-        ax.plot(df)
-        ax.set_xlabel("Time [ms]", fontsize=20)
+        ax.plot('ms','mL',data=df, label='Flow Measurment')
+        # ax.set_xlabel("Time [ms]", fontsize=20)
+        ax.set_xlabel("Time [s]", fontsize=20)
         ax.set_ylabel("Flow [mL/min]", fontsize=20)
         ax.tick_params(axis='both',which='major',labelsize=16)
         ax.spines['top'].set_visible(False)
@@ -333,7 +337,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         print(measurements)
         if plot:
             fig, ax = plt.subplots(1,1)
-            ax.set_xlabel("Time [ms]")
+            ax.set_xlabel("Time [ms]") 
             ax.set_ylabel("Flow [mL/min]")
             ax.set_title("Sensor Measurement")
             ax.set_ylim(-33000, 33000)
@@ -431,91 +435,71 @@ class SLS_1500Device(ShdlcDeviceBase):
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
 
-    
-    def Measure_and_Save(self, duration, interval, plot=None):
+    def Continuous_Measure_and_Save(self, duration_s, buffer_interval, plot=None):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
-        print("Measurement and Save started %ds " %duration)
+        print("Measurement and Save started %ds " %duration_s)
+        retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
         
-        buffer_data = []
-        retrievals = duration //10
-
+        df = pd.DataFrame(columns=['ms','mL'])
         while True:
-            self.Start_Continuous_Measurement(retrievals)
+            self.Start_Continuous_Measurement(buffer_interval)
+            start_time = time.time()
             sleep(MEASURING_INTERVAL) #secondes
-            df = pd.DataFrame(fs.Get_Measurement_Buffer())
+            df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer())
 
-            # Get the data from the buffer in intervals and 
+            # Get the data from the buffer in intervals and append it to the dataframe
             if retrievals > 1:
                 for i in range(retrievals-1):
                     sleep(MEASURING_INTERVAL) #secondes
-                    df = df._append(pd.DataFrame(fs.Get_Measurement_Buffer()),ignore_index=True)  
+                    df = df._append(pd.DataFrame(fs.Get_Measurement_Buffer(),columns=['mL']),ignore_index=True)                      
             
             self.Stop_Continuous_measurement()
+            print("Time elapsed: %.6f seconds" % (time.time() - start_time))
+            list_interval = np.arange(start=100, stop=len(df['mL']) * 100, step=100)
+            series_interval = pd.Series(list_interval)
+            df['ms'] = series_interval
+
+
             break
 
         # Saving Data to CSV
-        df.to_csv('output.csv', index=False, header=False)
+        df.to_csv('output.csv', index=False, header=True)
 
         if plot:
-            self.Plot_Flow_CSV('output.csv')
+                self.Plot_Flow_CSV('output.csv')
+    
+    def Sensor_Command_Settings(self,
+                                resolution=None,
+                                calib_field=None,
+                                set_linearization=None,
+                                ):
+        self.Get_Resolution()
+        self.Get_Calib_Field()
+        self.Get_Linearization()
+    
+    def Get_Sensor_Information(self):
+        self.Get_Version()
+        self.Get_Sensor_Status()
+        self.Get_Flow_Unit() # ml/min --> 8*256 + 4*16 + 5*1 = 2117
+        self.Get_Scale_Factor() # 500
+        self.Get_Measurement_Type
+        self.Get_Measurement_Data_Type()
+        self.Get_Heater_Mode()
+    
+    def Single_Measurement(self):
+        self.Start_Single_Measurement()
+        sleep(0.5) #secondes
+        self.Get_Single_Measurement()
+        
     
 
 with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
     
     # Sensor Command Settings
-    # fs.Set_Resolution(b"\x10") # 16 bit
-    # fs.Get_Resolution()
-    # fs.Set_Calib_Field(b"\x00") # not sure exactly what calibration field does
-    # fs.Get_Calib_Field()
-    # fs.Set_Linearization(False)
-    # fs.Get_Linearization()
+    fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True)
 
-    # Sensor Information
-    # fs.Get_Flow_Unit() # ml/min --> 8*256 + 4*16 + 5*1 = 2117
-    # fs.Get_Scale_Factor() # 500
-
-    # Check and Start-Up
-    # print("Get_Version")
-    # fs.Get_Version()
-    # print("Get_Sensor_Status")
-    # fs.Get_Sensor_Status()
-    # print("Get_Measurement_Type")
-    # fs.Get_Measurement_Type()
-    # print("Get_Resolution")
-    # fs.Get_Resolution()
-    # print("Get_Flow_Unit")
-    # fs.Get_Flow_Unit()
-    # print("Get_Linearization")
-    # fs.Get_Linearization()
-    # print("Get_Scale_Factor")
-    # scale_factor = fs.Get_Scale_Factor()
-    # print("Get_Measurement_Data_Type")
-    # fs.Get_Measurement_Data_Type()
-    # print("Get_Heater_Mode")
-    # fs.Get_Heater_Mode()
-    
-    # Single Measurement
-    # fs.Start_Single_Measurement()
-    # sleep(0.5) #secondes
-    # fs.Get_Single_Measurement()
-    
     # Multiple Continuous Measurement with Buffer
-    fs.Measure_and_Save(duration=4, interval=_100ms_HEX, plot=False)
-    
-    # Testing Plotting Data 
-    # fs.Plot_Flow_CSV('output.csv')
-
-    # Single Continuous Measurement 
-    # fs.Start_Continuous_Measurement(b"\x00\x64") # 100ms interval
-    # sleep(1) #secondes
-    # buffer_data = fs.Get_Measurement_Buffer()
-    # fs.Get_Continuous_Measurement_Status()
-    # fs.Stop_Continuous_measurement()
-    
-    
-
+    fs.Continuous_Measure_and_Save(duration_s=100, buffer_interval=_100ms_HEX, plot=True)
 
     
-
-            
