@@ -422,12 +422,6 @@ class SLS_1500Device(ShdlcDeviceBase):
             
             break
 
-        # Saving Data to CSV
-        # df['ms'].to_csv('output.csv', index=False, header=False, mode="a",columns=['ms'])
-
-        df = pd.read_csv('output.csv')
-        print(df)
-
         if plot:
                 self.Plot_Flow_CSV('output.csv')
 
@@ -448,12 +442,13 @@ class SLS_1500Device(ShdlcDeviceBase):
 
     def Plot_Flow_CSV(self, filename):
         self.Apply_Flow_Scale_Factor(filename)
-        df = pd.read_csv('output.csv')
+        self.Convert_ms_to_s(filename)
+        df = pd.read_csv(filename)
         fig, ax = plt.subplots(1,1)
         ax.set_ylim(-60, 60)
         ax.plot('ms','mL',data=df, label='Flow Measurment')
         ax.plot(data=df, label='Flow Measurment')
-        ax.set_xlabel("Time [ms]", fontsize=20)
+        # ax.set_xlabel("Time [ms]", fontsize=20)
         ax.set_xlabel("Time [s]", fontsize=20)
         ax.set_ylabel("Flow [mL/min]", fontsize=20)
         ax.tick_params(axis='both',which='major',labelsize=16)
