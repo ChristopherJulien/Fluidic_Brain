@@ -402,26 +402,31 @@ class SLS_1500Device(ShdlcDeviceBase):
             self.Start_Continuous_Measurement(buffer_interval)
             start_time = time.time()
             sleep(MEASURING_INTERVAL) #secondes
+            df['ms'] = pd.DataFrame(np.arange(start=100, stop=MEASURING_INTERVAL*100*10+1, step=100)) # Fill the dataframe with the time
             df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Fill the dataframe with the buffer
             df.to_csv('output.csv', index=False, header=True) # Write the buffer to csv
             
             if retrievals > 1:
                 for i in range(retrievals-1):
                     sleep(MEASURING_INTERVAL) #secondes
+                    last_ms_value = df['ms'].iloc[-1]
+                    print("Last ms value")
+                    print(last_ms_value)
+                    df['ms'] = pd.DataFrame(np.arange(start=last_ms_value +100, stop= last_ms_value+MEASURING_INTERVAL*100*10+1, step=100)) # Overwrite new dataframe with the time
                     df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Overwrite new dataframe with the buffer
                     df.to_csv('output.csv', index=False, header=False, mode="a") # Append the buffer to csv
                     print("Data appended successfully")
                     
             self.Stop_Continuous_measurement() # Stopped the continuous measurement
             print("Time elapsed: %.6f seconds" % (time.time() - start_time))
-
-            # list_interval = np.arange(start=100, stop=len(df['mL']) * 100+1, step=100)
-            # series_interval = pd.Series(list_interval)
-            # df['ms'] = series_interval
+            
             break
 
         # Saving Data to CSV
-        # df.to_csv('output.csv', index=False, header=True)
+        # df['ms'].to_csv('output.csv', index=False, header=False, mode="a",columns=['ms'])
+
+        df = pd.read_csv('output.csv')
+        print(df)
 
         if plot:
                 self.Plot_Flow_CSV('output.csv')
@@ -482,4 +487,4 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
     # Multiple Continuous Measurement with Buffer
-    fs.Continuous_Measure_and_Save(duration_s=30, buffer_interval=b"\x00\x64", plot=False) # 100s, 100ms buffer interval, plot=True
+    fs.Continuous_Measure_and_Save(duration_s=20, buffer_interval=b"\x00\x64", plot=False) # 100s, 100ms buffer interval, plot=True
