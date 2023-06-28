@@ -430,7 +430,6 @@ class SLS_1500Device(ShdlcDeviceBase):
         column_name = 'mL'
         df['mL'] = df['mL'].div(SCALE_FACTOR)
         df.to_csv('output.csv', index=False)
-        print(df)
     
     def Convert_ms_to_s(self, filename):
         df = pd.read_csv(filename)
@@ -438,7 +437,6 @@ class SLS_1500Device(ShdlcDeviceBase):
         df['ms'] = df['ms'].div(1000)
         df.to_csv('output.csv', index=False)
         df = df.rename(columns={"ms":'s'})
-        print(df)
 
     def Plot_Flow_CSV(self, filename):
         self.Apply_Flow_Scale_Factor(filename)
@@ -491,4 +489,4 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
     # Multiple Continuous Measurement with Buffer
-    fs.Continuous_Measure_and_Save(duration_s=20, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=True
+    fs.Continuous_Measure_and_Save(duration_s=900, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=True
