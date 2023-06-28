@@ -413,23 +413,29 @@ class SLS_1500Device(ShdlcDeviceBase):
             self.Start_Continuous_Measurement(buffer_interval)
             start_time = time.time()
             sleep(MEASURING_INTERVAL) #secondes
-            df['ms'] = pd.DataFrame(np.arange(start=100, stop=MEASURING_INTERVAL*100*10+1, step=100)) # Fill the dataframe with the time
+            elapsed_time = time.time() - start_time
+            time_steps = elapsed_time / 100 # number of measurements per second
+            df['ms'] = pd.DataFrame(np.arange(start=time_steps, stop=time_steps*100*1000+1, step=time_steps)) # Fill the dataframe with the time
             df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Fill the dataframe with the buffer
-            df.to_csv('output.csv', index=False, header=True) # Write the buffer to csv
+            df.to_csv('output.csv', index=False, header=True) # Write the buffer to csv 
+            # ?(Not sure how much this function costs in time)
             
             if retrievals > 1:
                 for i in range(retrievals-1):
+                    start_time = time.time()
                     sleep(MEASURING_INTERVAL) #secondes
+                    elapsed_time = time.time() - start_time
+                    time_steps = elapsed_time / 100 # number of measurements per second
                     last_ms_value = df['ms'].iloc[-1]
                     print("Last ms value")
                     print(last_ms_value)
-                    df['ms'] = pd.DataFrame(np.arange(start=last_ms_value +100, stop= last_ms_value+MEASURING_INTERVAL*100*10+1, step=100)) # Overwrite new dataframe with the time
+                    df['ms'] = pd.DataFrame(np.arange(start=last_ms_value+time_steps, stop= last_ms_value+time_steps*100*1000+1, step=time_steps)) # Overwrite new dataframe with the time
                     df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Overwrite new dataframe with the buffer
                     df.to_csv('output.csv', index=False, header=False, mode="a") # Append the buffer to csv
                     print("Data appended successfully")
                     
             self.Stop_Continuous_measurement() # Stopped the continuous measurement
-            print("Time elapsed: %.6f seconds" % (time.time() - start_time))
+            # print("Time elapsed: %.6f seconds" % (time.time() - start_time))
             
             break
         
