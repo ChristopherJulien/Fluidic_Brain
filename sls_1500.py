@@ -6,6 +6,9 @@ import time
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import csv
 
 MEASURING_INTERVAL = 10 # seconds
 _100ms_HEX =b"\x00\x64"
@@ -236,24 +239,7 @@ class SLS_1500Device(ShdlcDeviceBase):
     def __init__(self, connection, slave_address):
         super(SLS_1500Device, self).__init__(connection, slave_address)
 
-    def Plot_Flow_CSV(self, filename):
-        df = pd.read_csv(filename)
-        df['mL']=df['mL'].div(SCALE_FACTOR) #divide by scale factor
-        df['ms']=df['ms'].div(1000) #divide by scale factor
-        fig, ax = plt.subplots(1,1)
-        ax.set_ylim(-60, 60)
-        ax.plot('ms','mL',data=df, label='Flow Measurment')
-        # ax.set_xlabel("Time [ms]", fontsize=20)
-        ax.set_xlabel("Time [s]", fontsize=20)
-        ax.set_ylabel("Flow [mL/min]", fontsize=20)
-        ax.tick_params(axis='both',which='major',labelsize=16)
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-    
-        plt.legend(fontsize=16, frameon=False)
-        plt.tight_layout()
-        plt.show()
-
+   
     def Get_Version(self):
         raw_response = self.execute(Get_Version())
         # print("Raw response: ", format(raw_response))
@@ -404,36 +390,66 @@ class SLS_1500Device(ShdlcDeviceBase):
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
 
+
+
     def Continuous_Measure_and_Save(self, duration_s, buffer_interval, plot=None):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Measurement and Save started %ds " %duration_s)
         retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
         
-        df = pd.DataFrame(columns=['ms','mL'])
+        df = pd.DataFrame(columns=['ms','mL']) # create an empty dataframe
         while True:
             self.Start_Continuous_Measurement(buffer_interval)
             start_time = time.time()
             sleep(MEASURING_INTERVAL) #secondes
-            df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer())
-
-            # Get the data from the buffer in intervals and append it to the dataframe
+            df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Fill the dataframe with the buffer
+            df.to_csv('output.csv', index=False, header=True) # Write the buffer to csv
+            
             if retrievals > 1:
                 for i in range(retrievals-1):
                     sleep(MEASURING_INTERVAL) #secondes
-                    df = df._append(pd.DataFrame(fs.Get_Measurement_Buffer(),columns=['mL']),ignore_index=True)                      
-            
-            self.Stop_Continuous_measurement()
+                    df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Overwrite new dataframe with the buffer
+                    df.to_csv('output.csv', index=False, header=False, mode="a") # Append the buffer to csv
+                    print("Data appended successfully")
+                    
+            self.Stop_Continuous_measurement() # Stopped the continuous measurement
             print("Time elapsed: %.6f seconds" % (time.time() - start_time))
-            list_interval = np.arange(start=100, stop=len(df['mL']) * 100+1, step=100)
-            series_interval = pd.Series(list_interval)
-            df['ms'] = series_interval
+
+            # list_interval = np.arange(start=100, stop=len(df['mL']) * 100+1, step=100)
+            # series_interval = pd.Series(list_interval)
+            # df['ms'] = series_interval
             break
 
         # Saving Data to CSV
-        df.to_csv('output.csv', index=False, header=True)
+        # df.to_csv('output.csv', index=False, header=True)
 
         if plot:
                 self.Plot_Flow_CSV('output.csv')
+
+    def Plot_Flow_CSV(self, filename):
+        df = pd.read_csv(filename)
+        fig, ax = plt.subplots(1,1)
+        ax.set_ylim(-33000, 33000)
+        ax.plot(df)
+        plt.show()
+        # Make something that scales the plot 
+        # df['mL']=df['mL'].div(SCALE_FACTOR) #divide by scale factor
+        # # df['ms']=df['ms'].div(1000) #divide by scale factor
+        # fig, ax = plt.subplots(1,1)
+        # ax.set_ylim(-60, 60)
+        # # ax.plot('ms','mL',data=df, label='Flow Measurment')
+        # # ax.plot(data=df, label='Flow Measurment')
+        # # ax.set_xlabel("Time [ms]", fontsize=20)
+        # ax.set_xlabel("Time [s]", fontsize=20)
+        # ax.set_ylabel("Flow [mL/min]", fontsize=20)
+        # ax.tick_params(axis='both',which='major',labelsize=16)
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
+    
+        # plt.legend(fontsize=16, frameon=False)
+        # plt.tight_layout()
+        # plt.show()
+
     
     def Sensor_Command_Settings(self,
                                 resolution=None,
@@ -463,9 +479,7 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
     
     # Sensor Command Settings
-    fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
+    # fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
     # Multiple Continuous Measurement with Buffer
-    fs.Continuous_Measure_and_Save(duration_s=60*15, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=True
-
-    
+    fs.Continuous_Measure_and_Save(duration_s=30, buffer_interval=b"\x00\x64", plot=False) # 100s, 100ms buffer interval, plot=True
