@@ -431,29 +431,38 @@ class SLS_1500Device(ShdlcDeviceBase):
         if plot:
                 self.Plot_Flow_CSV('output.csv')
 
-    def Plot_Flow_CSV(self, filename):
+    def Apply_Flow_Scale_Factor(self, filename):
         df = pd.read_csv(filename)
-        fig, ax = plt.subplots(1,1)
-        ax.set_ylim(-33000, 33000)
-        ax.plot(df)
-        plt.show()
-        # Make something that scales the plot 
-        # df['mL']=df['mL'].div(SCALE_FACTOR) #divide by scale factor
-        # # df['ms']=df['ms'].div(1000) #divide by scale factor
-        # fig, ax = plt.subplots(1,1)
-        # ax.set_ylim(-60, 60)
-        # # ax.plot('ms','mL',data=df, label='Flow Measurment')
-        # # ax.plot(data=df, label='Flow Measurment')
-        # # ax.set_xlabel("Time [ms]", fontsize=20)
-        # ax.set_xlabel("Time [s]", fontsize=20)
-        # ax.set_ylabel("Flow [mL/min]", fontsize=20)
-        # ax.tick_params(axis='both',which='major',labelsize=16)
-        # ax.spines['top'].set_visible(False)
-        # ax.spines['right'].set_visible(False)
+        column_name = 'mL'
+        df['mL'] = df['mL'].div(SCALE_FACTOR)
+        df.to_csv('output.csv', index=False)
+        print(df)
     
-        # plt.legend(fontsize=16, frameon=False)
-        # plt.tight_layout()
-        # plt.show()
+    def Convert_ms_to_s(self, filename):
+        df = pd.read_csv(filename)
+        column_name = 'ms'
+        df['ms'] = df['ms'].div(1000)
+        df.to_csv('output.csv', index=False)
+        df = df.rename(columns={"ms":'s'})
+        print(df)
+
+    def Plot_Flow_CSV(self, filename):
+        self.Apply_Flow_Scale_Factor(filename)
+        df = pd.read_csv('output.csv')
+        fig, ax = plt.subplots(1,1)
+        ax.set_ylim(-60, 60)
+        ax.plot('ms','mL',data=df, label='Flow Measurment')
+        ax.plot(data=df, label='Flow Measurment')
+        ax.set_xlabel("Time [ms]", fontsize=20)
+        ax.set_xlabel("Time [s]", fontsize=20)
+        ax.set_ylabel("Flow [mL/min]", fontsize=20)
+        ax.tick_params(axis='both',which='major',labelsize=16)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+    
+        plt.legend(fontsize=16, frameon=False)
+        plt.tight_layout()
+        plt.show()
 
     
     def Sensor_Command_Settings(self,
@@ -487,4 +496,4 @@ with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     # fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
     # Multiple Continuous Measurement with Buffer
-    fs.Continuous_Measure_and_Save(duration_s=20, buffer_interval=b"\x00\x64", plot=False) # 100s, 100ms buffer interval, plot=True
+    fs.Continuous_Measure_and_Save(duration_s=20, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=True
