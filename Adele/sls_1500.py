@@ -267,8 +267,8 @@ class SLS_1500Device(ShdlcDeviceBase):
         int16 = unpack('>h', raw_response)
         print("Response signed Integer: {}".format(int16))
     
-    def Start_Continuous_Measurement(self,interval):
-        self.execute(Start_Continuous_Measurement(interval))
+    def Start_Continuous_Measurement(self):
+        self.execute(Start_Continuous_Measurement(interval=b"\x00\x64"))
         print("Continuous measurement started")
     
     def Get_Continuous_Measurement_Status(self):
@@ -391,79 +391,69 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Response Unsigned Integer: {}".format(uint8))
 
     def animate(i,filename):
-        fig = plt.figure()
-        ax1 = fig.add_subplot(1,1,1)
-
-
         df = pd.read_csv(filename)
         xs = df['ms']
         ys = df['mL']
-        ax1.clear()
-        ax1.plot(xs, ys)
+        return xs, ys
     
-
-
-    def Continuous_Measure_and_Save(self, duration_s, buffer_interval, plot=None):
+    def Continuous_Measure_and_Save(self, duration_s, filename=None, plot=None ):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Measurement and Save started %ds " %duration_s)
         retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
-        
-        df = pd.DataFrame(columns=['ms','mL']) # create an empty dataframe
-        while True:
-            self.Start_Continuous_Measurement(buffer_interval)
-            start_time = time.time()
+        if MEASURING_INTERVAL*retrievals<duration_s:
+            retrievals+=1
+        filename=filename+'.csv'
+        df = pd.DataFrame(columns=['ms','mL/min']) # create an empty dataframe
+        i = 0
+        start_time = time.time()
+        while i<retrievals:
+            print("Retrieval %d" %i)
+            self.Start_Continuous_Measurement()
+            last_ms_value = time.time() - start_time
+
             sleep(MEASURING_INTERVAL) #secondes
             elapsed_time = time.time() - start_time
             time_steps = elapsed_time / 100 # number of measurements per second
-            df['ms'] = pd.DataFrame(np.arange(start=time_steps, stop=time_steps*100*1000+1, step=time_steps)) # Fill the dataframe with the time
-            df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Fill the dataframe with the buffer
-            df.to_csv('output.csv', index=False, header=True) # Write the buffer to csv 
-            # ?(Not sure how much this function costs in time)
-            
-            if retrievals > 1:
-                for i in range(retrievals-1):
-                    start_time = time.time()
-                    sleep(MEASURING_INTERVAL) #secondes
-                    elapsed_time = time.time() - start_time
-                    time_steps = elapsed_time / 100 # number of measurements per second
-                    last_ms_value = df['ms'].iloc[-1]
-                    print("Last ms value")
-                    print(last_ms_value)
-                    df['ms'] = pd.DataFrame(np.arange(start=last_ms_value+time_steps, stop= last_ms_value+time_steps*100*1000+1, step=time_steps)) # Overwrite new dataframe with the time
-                    df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Overwrite new dataframe with the buffer
-                    df.to_csv('output.csv', index=False, header=False, mode="a") # Append the buffer to csv
-                    print("Data appended successfully")
+            if i == 0:
+                df['ms'] = pd.DataFrame(np.arange(start=time_steps*1000, stop=time_steps*100*1000+1, step=time_steps*1000)) # Fill the dataframe with the time
+                df['mL/min'] = pd.DataFrame(self.Get_Measurement_Buffer())/SCALE_FACTOR # Fill the dataframe with the buffer
+                df.to_csv(filename, index=False, header=True, mode='a') # Write the buffer to csv 
+            else:
+                print("Last ms value")
+                print(last_ms_value)
+                df['ms'] = pd.DataFrame(np.arange(start=(last_ms_value+time_steps)*1000, stop= (last_ms_value+time_steps)*100*1000+1, step=time_steps*1000)) # Overwrite new dataframe with the time
+                df['mL/min'] = pd.DataFrame(self.Get_Measurement_Buffer())/SCALE_FACTOR # Overwrite new dataframe with the buffer
                     
+                df.to_csv(filename, index=False, header=False, mode='a')
             self.Stop_Continuous_measurement() # Stopped the continuous measurement
             # print("Time elapsed: %.6f seconds" % (time.time() - start_time))
-            
-            break
+            i+=1
+            sleep(0.1)
         
-        # self.animate('output.csv')
-        # ani = animation.FuncAnimation(fig, self.animate, interval=1000)
         # fig = plt.figure()
         # ax1 = fig.add_subplot(1,1,1)
+        # ax1.clear()
+        # ax1.plot(df['ms'], df['mL'])
         # ani = animation.FuncAnimation(fig, self.animate, interval=1000)
-
-
+        # plt.show()
+    
         if plot:
-                self.Plot_Flow_CSV('output.csv')
+                self.Plot_Flow_CSV(filename)
 
     def Apply_Flow_Scale_Factor(self, filename):
         df = pd.read_csv(filename)
-        column_name = 'mL'
-        df['mL'] = df['mL'].div(SCALE_FACTOR)
-        df.to_csv('output.csv', index=False)
+        column_name = 'mL/min'
+        df['mL/min'] = df['mL/min'].div(SCALE_FACTOR)
+        df.to_csv(filename, index=False)
     
     def Convert_ms_to_s(self, filename):
         df = pd.read_csv(filename)
         column_name = 'ms'
         df['ms'] = df['ms'].div(1000)
-        df.to_csv('output.csv', index=False)
+        df.to_csv(filename, index=False)
         df = df.rename(columns={"ms":'s'})
 
     def Plot_Flow_CSV(self, filename):
-        self.Apply_Flow_Scale_Factor(filename)
         self.Convert_ms_to_s(filename)
         df = pd.read_csv(filename)
         fig, ax = plt.subplots(1,1)
@@ -506,11 +496,12 @@ class SLS_1500Device(ShdlcDeviceBase):
         self.Get_Single_Measurement()
         
 
-with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
-    fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
+# with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
+#     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
     
     # Sensor Command Settings
     # fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
     # Multiple Continuous Measurement with Buffer
-    fs.Continuous_Measure_and_Save(duration_s=10, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=True
+    # fs.Continuous_Measure_and_Save(duration_s=15, plot=False, filename='output') # 100s, 100ms buffer interval, plot=True
+
