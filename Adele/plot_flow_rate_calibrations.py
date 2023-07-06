@@ -17,38 +17,70 @@ search_pattern = r'flow_rate_forward_(\d+\.\d+)_ul_min'
 files = glob.glob(os.path.join(directory, file_pattern))
 
 
-fig, ax = plt.subplots(1, 1)
+q_set_list = []
 q_measured_list = []
 q_std_list = []
-q_set_list = []
+q_percent_error_list = []
 
 for filename in files:
     match = re.search(search_pattern, filename)
     if match:
         flow_rate = float(match.group(1))
-        print("Flow rate:", flow_rate)
+        # print("Flow rate:", flow_rate)
     else:
         print("Error: Could not parse file name: {}".format(filename))
         sys.exit(1)
 
     df = pd.read_csv(filename)
     mL_min = df['mL/min'].tolist()
-    s = (df['ms']/1000).tolist()
+    s = (df['ms'] / 1000).tolist()
     s = np.array(s)
     mask = s > 1
     q = np.array(mL_min)
     q = q[mask]
+
     q_average = np.average(q)
+    q_error = abs(q_average - flow_rate / 1000) / (flow_rate / 1000) * 100
+    q_percent_error_list.append(q_error)
+    # q_percent_error_list=abs(q_average-q_set_list)/(q_set_list)*100
+
+
+
+    # print(f"Average: {q_average}, Error: {q_error}%")
     q_std = np.std(q)
     q_measured_list.append(q_average)
     q_std_list.append(q_std)
-    q_set_list.append(flow_rate/1000)
+    q_set_list.append(flow_rate / 1000)
 
-ax.errorbar(q_set_list, q_measured_list, yerr=q_std_list, fmt='o', capsize=5, label='Measured')
-ax.plot(q_set_list, q_set_list, label='Set',linestyle='--')
+
+plt.figure(figsize=(10, 5))
+
+# Plot measured vs. set flow rate
+plt.subplot(1, 2, 1)
+plt.errorbar(q_set_list, q_measured_list, yerr=q_std_list, fmt='o', capsize=5, label='Measured')
+plt.plot(q_set_list, q_set_list, label='Set', linestyle='--')
+plt.xlabel("Set Flow Rate (mL/min)")
+plt.ylabel("Measured Flow Rate (mL/min)")
+plt.title("Flow Rate Measurement")
+plt.legend()
+
+# print(len(q_percent_error_list))
+# print(len(q_set_list))
+# print(q_set_list)
+
+# Plot percent error
+plt.subplot(1, 2, 2)
+plt.plot(q_set_list, q_percent_error_list,'o')
+plt.xlabel("Set Flow Rate (mL/min)")
+plt.ylabel("Percent Error (%)")
+plt.title("Flow Rate Measurement - Percent Error")
+
+plt.tight_layout()
 plt.show()
-# plt.close()  
 
+
+
+# plt.close()  
 # q measured vs q imposed, cut out the first second and then add the color gradients
 
 

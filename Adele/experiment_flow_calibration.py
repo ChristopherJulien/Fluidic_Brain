@@ -31,7 +31,7 @@ if __name__=="__main__":
     vtot = np.sum(volume)  # Calculate the total volume by summing all elements in the volume array
     print("total volume in mL ", vtot)  # Print the total volume (ml 
 
-    syringeA = Syringe("a", '30', 'bdp')  # Create a Syringe object with syringe number 'a', volume '10 ml', and plastic type 'bdp'
+    syringeA = Syringe("b", '30', 'bdp')  # Create a Syringe object with syringe number 'a', volume '10 ml', and plastic type 'bdp'
     pump = Pump("A", "COM5", syringe1=syringeA)  # Create a Pump object with pump number 'A', connected to serial port 'COM5', and using syringeA
     pump.stop()  # Stop the pump before performing any operations
     if SL1500_flag:
