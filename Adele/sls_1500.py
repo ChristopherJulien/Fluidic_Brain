@@ -393,7 +393,7 @@ class SLS_1500Device(ShdlcDeviceBase):
     def animate(i,filename):
         df = pd.read_csv(filename)
         xs = df['ms']
-        ys = df['mL']
+        ys = df['mL/min']
         return xs, ys
     
     def Continuous_Measure_and_Save(self, duration_s, filename=None, plot=None ):
@@ -458,7 +458,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         df = pd.read_csv(filename)
         fig, ax = plt.subplots(1,1)
         ax.set_ylim(-60, 60)
-        ax.plot('ms','mL',data=df, label='Flow Measurment')
+        ax.plot('ms','mL/min',data=df, label='Flow Measurment')
         ax.plot(data=df, label='Flow Measurment')
         # ax.set_xlabel("Time [ms]", fontsize=20)
         ax.set_xlabel("Time [s]", fontsize=20)
