@@ -4,7 +4,7 @@ def create_folder(path):
     if not os.path.isdir(path):
         os.mkdir(path)
 from sls_1500 import *
-from microflowsensor import *
+from Microflowsensor import *
 
 def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=True):
     assert flow_meter is not None, "Flow meter not connected"
