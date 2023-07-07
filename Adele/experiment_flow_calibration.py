@@ -22,7 +22,7 @@ def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=
 if __name__=="__main__":
     SL1500_flag = True
     x1 = np.array([0.1])  # Create a NumPy array with a single value 0.1
-    x2 = np.arange(0.5, 10.1, 0.5)  # Create a NumPy array with values ranging from 0.5 to 10 (inclusive) with a step of 0.5
+    x2 = np.arange(0.5, 11.1, 0.5)  # Create a NumPy array with values ranging from 0.5 to 10 (inclusive) with a step of 0.5
     pump_flow_rates = np.hstack((x1, x2)) * 1000  # Concatenate x1 and x2 arrays, then multiply by 1000 (ul/min)
     pump_flow_rates = pump_flow_rates[::-1]
     print(pump_flow_rates)
