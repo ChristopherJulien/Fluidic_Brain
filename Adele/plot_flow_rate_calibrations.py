@@ -54,8 +54,8 @@ def plot_flow_rate_over_time(files, search_pattern):
             sys.exit(1)
 
         df = pd.read_csv(filename)
-        mL_min = df['mL/min'].tolist()
-        s = (df['ms'] / 1000).tolist()
+        mL_min = (df['flowrate µl/min']/1000).tolist()
+        s = (df['# time (s)']).tolist()
 
         ax.plot(s, mL_min, label='q measured {} mL/min'.format(flow_rate / 1000))
 
@@ -74,8 +74,8 @@ def plot_flow_rate_over_time(files, search_pattern):
 
 # Main code
 directory = os.getcwd()
-file_pattern = 'flow_rate_forward_*.csv'
-search_pattern = r'flow_rate_forward_(\d+\.\d+)_ul_min'
+file_pattern = 'flg_flow_rate_forward_*.csv'
+search_pattern = r'flg_flow_rate_forward_(\d+\.\d+)_ul_min'
 files = glob.glob(os.path.join(directory, file_pattern))
 
 q_set_list = []
@@ -94,8 +94,8 @@ for filename in files:
         sys.exit(1)
 
     df = pd.read_csv(filename)
-    mL_min = df['mL/min'].tolist()
-    s = (df['ms'] / 1000).tolist()
+    mL_min = (df['flowrate µl/min']/1000).tolist()
+    s = (df['# time (s)'] * 1000).tolist()
     s = np.array(s)
     low_filter = s > 1
     q = np.array(mL_min)
