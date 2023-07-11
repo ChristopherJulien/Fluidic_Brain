@@ -39,7 +39,7 @@ class MicroFlowMeter:
             time_list.append(time.time()-t_start)
             time.sleep(interval)
         if save_data:
-            np.savetxt(filename ,np.c_[time_list,flow_rate_list],delimiter=',',header='time (s),flowrate '+self.unit)
+            np.savetxt(filename ,np.c_[time_list*1000,flow_rate_list *1000],delimiter=',',header='ms,mL/min')
         return flow_rate_list,time_list
 
 

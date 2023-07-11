@@ -400,7 +400,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Measurement and Save started %ds " %duration_s)
 
-        self.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
+        # self.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
         retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
         if MEASURING_INTERVAL*retrievals<duration_s:

@@ -5,6 +5,7 @@ def create_folder(path):
         os.mkdir(path)
 from sls_1500 import *
 from Microflowsensor import *
+from Plot_module import PlotModule
 
 def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=True):
     assert flow_meter is not None, "Flow meter not connected"
@@ -23,8 +24,8 @@ def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=
 if __name__=="__main__":
     SL1500_flag = True
 
-    x1 = np.array([15.])  # Create a NumPy array with a single value 0.1
-    x2 = np.arange(16.0, 21., .5)  # Create a NumPy array with values ranging from 100uL to 2ml (inclusive) with a step of 100uL
+    x1 = np.array([8.0])  # Create a NumPy array with a single value 0.1
+    x2 = np.arange(9.0, 20.1, .5)  # Create a NumPy array with values ranging from 100uL to 2ml (inclusive) with a step of 100uL
     pump_flow_rates = np.hstack((x1, x2)) * 1000  # Concatenate x1 and x2 arrays, then multiply by 1000 (ul/min)
     pump_flow_rates = pump_flow_rates[::-1]
     print(pump_flow_rates)
@@ -32,10 +33,12 @@ if __name__=="__main__":
     runtime = 10  # Set the runtime value to 10 seconds
     volume = pump_flow_rates * runtime / (60*1000)  # Calculate the volume based on pump flow rates and runtime (ml)
     vtot = np.sum(volume)  # Calculate the total volume by summing all elements in the volume array
-    print("Total volume {:.2f} mL ".format(vtot))  # Print the total volume (ml 
+    minutes_tot = len(pump_flow_rates) * runtime //60
+    seconds_tot =len(pump_flow_rates) * runtime %60
+    print("Total volume {:.2f} mL and {}mins {}s".format(vtot,minutes_tot,seconds_tot))  # Print the total volume (ml 
 
-    syringeA = Syringe("A", '30', 'bdp')  # Create a Syringe object with syringe number 'a', volume '10 ml', and plastic type 'bdp'
-    # syringeB = Syringe("B", '10', 'bdp')  # Create a Syringe object with syringe number 'b', volume '10 ml', and plastic type 'bdp'
+    syringeA = Syringe("A", '60', 'bdp')  # Create a Syringe object with syringe number 'a', volume '10 ml', and plastic type 'bdp'
+    # syringeB = Syringe("B", '60', 'bdp')  # Create a Syringe object with syringe number 'b', volume '10 ml', and plastic type 'bdp'
 
     pumpA = Pump("A", "COM5", syringe1=syringeA)  # Create a Pump object with pump number 'A', connected to serial port 'COM5', and using syringeA
     # pumpB = Pump("B", "COM5", syringe1=syringeB)  # Create a Pump object with pump number 'B', connected to serial port 'COM', and using syringeB
@@ -48,7 +51,7 @@ if __name__=="__main__":
         port = ShdlcSerialPort(port='COM3', baudrate=115200)  # Create a serial port object for communication on port 'COM3' with baudrate 115200
         flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)  # Create a flow meter device using the ShdlcConnection and the port, with a slave address of 0
         # Call the experiment function with the specified parameters
-        experiment(flow_rates=pump_flow_rates, pump=pumpA, syringe=syringeA, runtime=runtime, flow_meter=flow_meter)
+        # experiment(flow_rates=pump_flow_rates, pump=pumpA, syringe=syringeA, runtime=runtime, flow_meter=flow_meter)
     
     else:
         microFlowMeter = MicroFlowMeter()
@@ -56,6 +59,10 @@ if __name__=="__main__":
 
     pumpA.stop()  # Stop the pump after the experiment is completed
     # pumpB.stop()  # Stop the pump after the experiment is completed
+
+    plot = PlotModule(SL1500_flag)
+    plot.plot_flow_rates(pump_flow_rates, runtime, flow_meter, microFlowMeter)
+
 
     
 
