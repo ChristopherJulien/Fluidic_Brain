@@ -47,15 +47,19 @@ def plot_flow_rate_over_time(files, search_pattern):
         match = re.search(search_pattern, filename)
         if match:
             flow_rate = float(match.group(1))
-            if flow_rate == 11000.0:
+            if flow_rate == 25000.0:
                 continue
         else:
             print("Error: Could not parse file name: {}".format(filename))
             sys.exit(1)
 
         df = pd.read_csv(filename)
-        mL_min = (df['flowrate µl/min']/1000).tolist()
-        s = (df['# time (s)']).tolist()
+        # mL_min = (df['flowrate µl/min']/1000).tolist()
+        # s = (df['# time (s)']).tolist()
+        mL_min = (df['mL/min']/1000).tolist()
+        s = (df['ms']*1000).tolist()
+        
+
 
         ax.plot(s, mL_min, label='q measured {} mL/min'.format(flow_rate / 1000))
 
@@ -65,17 +69,19 @@ def plot_flow_rate_over_time(files, search_pattern):
     save_directory = os.path.join(directory, "Flow_Calibration_plots")
     os.makedirs(save_directory, exist_ok=True)
 
-    save_path = os.path.join(save_directory, "100uL_min_to_10mL_min-{}.png".format(datetime.now().strftime("%d-%m-%Y_%H-%M-%S")))
-    plt.savefig(save_path)
-    print("Plot saved: {}".format(save_path))
+    # save_path = os.path.join(save_directory, "100uL_min_to_10mL_min-{}.png".format(datetime.now().strftime("%d-%m-%Y_%H-%M-%S")))
+    # plt.savefig(save_path)
+    # print("Plot saved: {}".format(save_path))
 
     plt.show()
     plt.close()
 
 # Main code
 directory = os.getcwd()
-file_pattern = 'flg_flow_rate_forward_*.csv'
-search_pattern = r'flg_flow_rate_forward_(\d+\.\d+)_ul_min'
+# file_pattern = 'flg_flow_rate_forward_*.csv'
+# search_pattern = r'flg_flow_rate_forward_(\d+\.\d+)_ul_min'
+file_pattern = 'sls_flow_rate_forward_*.csv'
+search_pattern = r'sls_flow_rate_forward_(\d+\.\d+)_ul_min'
 files = glob.glob(os.path.join(directory, file_pattern))
 
 q_set_list = []
@@ -94,8 +100,9 @@ for filename in files:
         sys.exit(1)
 
     df = pd.read_csv(filename)
-    mL_min = (df['flowrate µl/min']/1000).tolist()
-    s = (df['# time (s)'] * 1000).tolist()
+    # mL_min = (df['flowrate µl/min']/1000).tolist()
+    mL_min = (df['mL/min']).tolist()
+    s = (df['ms']).tolist()
     s = np.array(s)
     low_filter = s > 1
     q = np.array(mL_min)
