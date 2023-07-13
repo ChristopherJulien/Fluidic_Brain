@@ -40,7 +40,7 @@ class MicroFlowMeter:
         if save_data:
             print(len(time_list))
             print(len(flow_rate_list))
-            np.savetxt(filename, np.c_[time_list, flow_rate_list], delimiter=',', header='s,mL/min', comments='')
+            np.savetxt(filename, np.c_[time_list, flow_rate_list], delimiter=',', header='s,uL/min', comments='')
             
         return flow_rate_list,time_list
 

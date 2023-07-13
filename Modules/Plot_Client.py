@@ -29,7 +29,7 @@ class Plot:
         else:
             print("FLG Plotting")
             file_pattern = 'flg_flow_rate_forward_*.csv'
-            search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
+            search_pattern = r'flg_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern))
 
         for i, filename in enumerate(files):
@@ -43,9 +43,9 @@ class Plot:
                 sys.exit(1)
 
             df = pd.read_csv(filename)
-            mL_min = (df['mL/min']).tolist()
-            # print(mL_min)
-            s = (df['ms']).tolist()
+            mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['uL/min'].tolist()]
+            s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
+
             s = np.array(s)
             low_filter = s > 1
             q = np.array(mL_min)
@@ -95,7 +95,7 @@ class Plot:
         else:
             print("FLG Plotting")
             file_pattern = 'flg_flow_rate_forward_*.csv'
-            search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
+            search_pattern = r'flg_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern)) 
             
         colors = cm.viridis(np.linspace(0.1,0.9, len(files)))
@@ -110,8 +110,8 @@ class Plot:
                 sys.exit(1)
 
             df = pd.read_csv(filename)
-            mL_min = (df['mL/min']).tolist()
-            s = (df['ms']).tolist()
+            mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['uL/min'].tolist()]
+            s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
             ax.plot(s, mL_min, label='q measured {} mL/min'.format(flow_rate / 1000), c= colors[i])
 
         ax.autoscale(axis='y')
@@ -155,6 +155,6 @@ class Plot:
         
 
 if __name__=="__main__":
-    plot_module = Plot(SLS1500_flag = True)
+    plot_module = Plot(SLS1500_flag = False)
     plot_module.q_vs_qs_and_relative_error()
     plot_module.flow_rate_over_time()
