@@ -86,7 +86,7 @@ class Plot:
     def flow_rate_over_time(self):
 
         print("Plotting Flow Rate Over Time")
-        fig, ax = plt.subplots(1, 1)
+        fig, ax = plt.subplots(1, 1, figsize=(16, 9))  # Set the figsize to the screen aspect ratio
 
         if self.SLS1500_flag:
             print("SLS1500 Plotting")
@@ -112,25 +112,26 @@ class Plot:
                 sys.exit(1)
 
             df = pd.read_csv(filename)
-            print(df)
             mL_min = (df['mL/min']).tolist()
             s = (df['ms']).tolist()
             ax.plot(s, mL_min, label='q measured {} mL/min'.format(flow_rate / 1000), c= colors[i])
 
-        ax.autoscale(axis='y')  # Adjust y-axis limits automatically
+        ax.autoscale(axis='y')
         ax.legend(fontsize=8, frameon=False)
-        
         ax.set_xlabel("Time [s]", fontsize=20)
         ax.set_ylabel("Flow [mL/min]", fontsize=20)
         ax.tick_params(axis='both', which='major', labelsize=16)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        
-        plt.rcParams['figure.autolayout']=True
-        plt.rcParams['font.size']=9
-        plt.rcParams['legend.edgecolor']='1'
-        plt.legend(fontsize=16, frameon=False) 
-        # plt.tight_layout()
+
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        plt.legend(fontsize=12, frameon=False)  # Decrease the fontsize value to make the legend smaller
+
+
+
+        plt.show()
 
         # save_directory = os.path.join(directory, "Flow_Calibration_plots")
         # os.makedirs(save_directory, exist_ok=True)
@@ -138,10 +139,9 @@ class Plot:
         # plt.savefig(save_path)
         # print("Plot saved: {}".format(save_path))
 
-        plt.show()
         
 
 if __name__=="__main__":
     plot_module = Plot(SLS1500_flag = True)
-    plot_module.q_vs_qs_and_relative_error()
+    # plot_module.q_vs_qs_and_relative_error()
     plot_module.flow_rate_over_time()
