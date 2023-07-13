@@ -405,7 +405,8 @@ class SLS_1500Device(ShdlcDeviceBase):
         retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
         if MEASURING_INTERVAL*retrievals<duration_s:
             retrievals+=1
-        
+        flow_rate_raw = float(flow_rate_string)
+        flow_rate_string = "{:.2f}".format(flow_rate_raw)
         experiment_name = "sls_flow_rate_forward_"+flow_rate_string+"_ul_min"
         filename=experiment_name+'.csv'
 

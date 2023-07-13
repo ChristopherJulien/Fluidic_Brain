@@ -8,8 +8,6 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-colors = cm.viridis(np.linspace(0.1,0.9, 25))
-
 
 class Plot:
     def __init__(self,SLS1500_flag ):
@@ -26,12 +24,12 @@ class Plot:
         if self.SLS1500_flag:
             print("SLS1500 Plotting")
             file_pattern = 'sls_flow_rate_forward_*.csv'
-            search_pattern = r'sls_flow_rate_forward_(\d+\.\d+)_ul_min'
+            search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern))
         else:
             print("FLG Plotting")
             file_pattern = 'flg_flow_rate_forward_*.csv'
-            search_pattern = r'flg_flow_rate_forward_(\d+\.\d+)_ul_min'
+            search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern))
 
         for i, filename in enumerate(files):
@@ -46,7 +44,7 @@ class Plot:
 
             df = pd.read_csv(filename)
             mL_min = (df['mL/min']).tolist()
-            print(mL_min)
+            # print(mL_min)
             s = (df['ms']).tolist()
             s = np.array(s)
             low_filter = s > 1
@@ -91,16 +89,16 @@ class Plot:
         if self.SLS1500_flag:
             print("SLS1500 Plotting")
             file_pattern = 'sls_flow_rate_forward_*.csv'
-            search_pattern = r'sls_flow_rate_forward_(\d+\.\d+)_ul_min'
+            search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern)) 
             
         else:
             print("FLG Plotting")
             file_pattern = 'flg_flow_rate_forward_*.csv'
-            search_pattern = r'flg_flow_rate_forward_(\d+\.\d+)_ul_min'
+            search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern)) 
             
-
+        colors = cm.viridis(np.linspace(0.1,0.9, len(files)))
         for i, filename in enumerate(files):
             match = re.search(search_pattern, filename)
             if match:
@@ -139,9 +137,24 @@ class Plot:
         # plt.savefig(save_path)
         # print("Plot saved: {}".format(save_path))
 
+
+# def volt_to_mbar(sensor, volt_signal, volt_source):
+#     '''
+#     Convert MXP sensor voltage to differential pressure.
+#     No error or zero-offset included. Values outside of [0.5,4.5]V
+#     are excluded (returned as np.nan).
+#     '''
+#     cdict = {'25kPa': 0.018,
+#              '7kPa': 0.057,
+#              '2kPa': 0.2}
+#     pressure = (volt_signal/volt_source - 0.5)/cdict[sensor]*10
+#     pressure [volt_signal < 0.5] = np.nan
+#     pressure [volt_signal > 4.5] = np.nan
+#     return pressure
+
         
 
 if __name__=="__main__":
     plot_module = Plot(SLS1500_flag = True)
-    # plot_module.q_vs_qs_and_relative_error()
+    plot_module.q_vs_qs_and_relative_error()
     plot_module.flow_rate_over_time()
