@@ -2,10 +2,27 @@ from sensirion_shdlc_driver import ShdlcSerialPort, ShdlcConnection, ShdlcDevice
 from sensirion_shdlc_driver.command import ShdlcCommand
 from struct import pack, unpack
 from time import sleep
+import time
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+plt.style.use('fivethirtyeight')
+
+MEASURING_INTERVAL = 10 # seconds
+_100ms_HEX =b"\x00\x64"
+SCALE_FACTOR = 500
 
 # Sensor Measurement Commands
+class Get_Version(ShdlcCommand):
+    def __init__(self):
+        super(Get_Version, self).__init__(
+            id=0xD1,  # Get device information
+            data=b"",  # The payload data to send, 1 byte; 3 is serial number
+            max_response_time=0.2,  # Maximum response time in Seconds
+    )
+
 class Get_Sensor_Status(ShdlcCommand):
     def __init__(self,):
         super(Get_Sensor_Status, self).__init__(
@@ -22,7 +39,7 @@ class Start_Single_Measurement(ShdlcCommand):
             max_response_time=0.2,  # Maximum response time in Seconds
     )
 
-class Get_Single_Measurement(ShdlcCommand):
+class Get_Single_Measurement(ShdlcCommand): 
     def __init__(self,):
         super(Get_Single_Measurement, self).__init__(
             id=0x32,  # Get device information
@@ -31,11 +48,11 @@ class Get_Single_Measurement(ShdlcCommand):
     )
         
 class Start_Continuous_Measurement(ShdlcCommand):
-    def __init__(self):
+    def __init__(self,interval):
         super(Start_Continuous_Measurement, self).__init__(
             id=0x33,  # Command ID as specified in the device documentation
-            data=b"\x01",  # Payload data
-            max_response_time=0.2,  # Maximum response time in Seconds
+            data = interval,  # Payload with interaval of 64Hex = 100DEC ms and 
+            max_response_time=0.001,  # Maximum response time in Seconds
         )
 
 class Get_Continuous_Measurement_Status(ShdlcCommand):
@@ -45,15 +62,6 @@ class Get_Continuous_Measurement_Status(ShdlcCommand):
             data=b"",  # Payload data
             max_response_time=0.2,  # Maximum response time in Seconds
         )
-
-# class Get_Continuous_Measurement(ShdlcCommand):
-#     def __init__(self, response_time=1):
-#         super(Get_Continuous_Measurement, self).__init__(
-#             id=0x36,  # Command ID as specified in the device documentation
-#             data=b"",  # Payload data
-#             measured_2bytes = [], # Where the continuous measurement will be stored
-#             max_response_time=response_time,  # Maximum response time in Seconds
-#         )
 
 class Stop_Continuous_Measurement(ShdlcCommand):
     def __init__(self):
@@ -68,6 +76,14 @@ class Get_Measurement_Buffer(ShdlcCommand):
         super(Get_Measurement_Buffer, self).__init__(
             id=0x36,  # Command ID as specified in the device documentation
             data=b"",  # Payload data
+            max_response_time=0.2,  # Maximum response time in Seconds
+        )
+
+class Get_Last_Measurement_Mode_Duration(ShdlcCommand):
+    def __init__(self):
+        super(Get_Last_Measurement_Mode_Duration, self).__init__(
+            id=0x38,  # Command ID as specified in the device documentation
+            data=b"\x00",  # Payload data
             max_response_time=0.2,  # Maximum response time in Seconds
         )
 
@@ -87,11 +103,19 @@ class Get_Measurement_Type(ShdlcCommand):
             max_response_time=0.2,  # Maximum response time in Seconds
         )
 
+class Set_Resolution(ShdlcCommand):
+    def __init__(self, resolution):
+        super(Set_Resolution, self).__init__(
+            id=0x41,  # Command ID as specified in the device documentation
+            data=resolution,  # Payload u8t for 16 = 10Hex
+            max_response_time=0.2,  # Maximum response time in Seconds
+        )
+
 class Get_Resolution(ShdlcCommand):
     def __init__(self):
         super(Get_Resolution, self).__init__(
-            id=0x42,  # Command ID as specified in the device documentation
-            data=b"02",  # Payload data
+            id=0x41,  # Command ID as specified in the device documentation
+            data=b"",  # Payload data
             max_response_time=0.2,  # Maximum response time in Seconds
         )
 
@@ -107,6 +131,22 @@ class Get_Heater_Mode(ShdlcCommand):
     def __init__(self):
         super(Get_Heater_Mode, self).__init__(
             id=0x42,  # Command ID as specified in the device documentation
+            data=b"",  # Payload data
+            max_response_time=0.2,  # Maximum response time in Seconds
+        )
+
+class Set_Calib_Field(ShdlcCommand):
+    def __init__(self, calib_field):
+        super(Set_Calib_Field, self).__init__(
+            id=0x43,  # Command ID as specified in the device documentation
+            data=calib_field,  # Payload data
+            max_response_time=0.2,  # Maximum response time in Seconds
+        )
+    
+class Get_Calib_Field(ShdlcCommand):
+    def __init__(self):
+        super(Get_Calib_Field, self).__init__(
+            id=0x43,  # Command ID as specified in the device documentation
             data=b"",  # Payload data
             max_response_time=0.2,  # Maximum response time in Seconds
         )
@@ -128,10 +168,10 @@ class Get_Factory_Settings(ShdlcCommand):
         )
 
 class Set_Linearization(ShdlcCommand):
-    def __init__(self):
+    def __init__(self, bool):
         super(Set_Linearization, self).__init__(
             id=0x45,  # Command ID as specified in the device documentation
-            data=b"\x00",  # False: Raw Measurement, True: Linearized Measurement
+            data=pack("B", int(bool)),  # False: Raw Measurement, True: Linearized Measurement
             max_response_time=0.2,  # Maximum response time in Seconds
         )
 
@@ -150,6 +190,7 @@ class Get_Flow_Unit(ShdlcCommand):
             data=b"",  # False: Raw Measurement, True: Linearized Measurement
             max_response_time=0.2,  # Maximum response time in Seconds
         )
+        
 class Get_Scale_Factor(ShdlcCommand):
     def __init__(self):
         super(Get_Scale_Factor, self).__init__(
@@ -157,6 +198,7 @@ class Get_Scale_Factor(ShdlcCommand):
             data=b"",  # False: Raw Measurement, True: Linearized Measurement
             max_response_time=0.2,  # Maximum response time in Seconds
         )
+
 class Get_Measurement_Data_Type(ShdlcCommand):
     def __init__(self):
         super(Get_Measurement_Data_Type, self).__init__(
@@ -172,32 +214,41 @@ class Sensor_Reset(ShdlcCommand):
             data=b"",  # False: Raw Measurement, True: Linearized Measurement
             max_response_time=5,  # Maximum response time in Seconds
         )
-
-
-    # def interpret_response(self, data, measured_2bytes):
-    #     # Convert the received raw bytes to the proper data types
-    #     # uint32, uint8 = unpack('>IB', data)
-    #     # return uint32, uint8
-    #     print("Interpreting Get_Continuous_Measurement response...")
-    #     for i in range(int(len(data)/2)):
-    #         sig = data[2*i:2*i+2]
-    #         #2 bytes, hex encoding
-    #         sig_dec = int.from_bytes(sig, 'big', signed=True)
-        
-    #         # sig_dec = int(sig.hex(),16)
-    #         measured_2bytes.append(sig_dec)
     
-    # def print_continous_measurement(self,measured_2bytes):
-    #     print(measured_2bytes)
-    #     fig, ax = plt.subplots(1,1)
-    #     ax.set_ylim(-33000, 33000)
-    #     ax.plot(measured_2bytes)
-
+def decode_unit(bitcode):
+    '''
+    Decode sensor flow unit bitcode into string.
+    '''
+    intcode = int.from_bytes(bitcode, 'big', signed=False) 
+    vol_unit_code = int(intcode/256)
+    time_unit_code = int((intcode%256)/16)
+    dim_unit_code = int(intcode%16)
+    
+    time_dict = {0: r'', 1: r'$\mu$ s$^{-1}$', 2: r'ms$^{-1}$', 
+                 3: r's$^{-1}$', 4: r'min$^{-1}$'}
+    time_dict = {0: r'', 1: r'/$\mu$s$', 2: r'/ms', 
+                 3: r'/s', 4: r'/min'}
+    vol_dict = {0: r'L', 1:'L', 8:'L', 9:'g'}
+    
+    dim_dict = {3: 'n', 4: '$\mu$', 5:'m', 6:'c', 7:'d',
+                8:'', 9:'da', 10:'h', 11:'k', 12:'M', 13:'G'}
+    unit_string = dim_dict[dim_unit_code] + vol_dict[vol_unit_code] + time_dict[time_unit_code]
+    return unit_string
 
 class SLS_1500Device(ShdlcDeviceBase):
     def __init__(self, connection, slave_address):
         super(SLS_1500Device, self).__init__(connection, slave_address)
 
+   
+    def Get_Version(self):
+        raw_response = self.execute(Get_Version())
+        # print("Raw response: ", format(raw_response))
+        firmware_Major, firmware_Minor,firmware_debug, hardware_Major, hardware_Minor, shdl_major, shdl_minor  = unpack('>BBBBBBB', raw_response)
+        print("Firmware: {}.{}".format(firmware_Major,firmware_Minor))
+        print("Firmware Debug: {}".format(firmware_debug))
+        print("Hardware: {}.{}".format(hardware_Major,hardware_Minor))
+        print("SHDL: {}.{}".format(shdl_major,shdl_minor))
+    
     def Get_Sensor_Status(self):
         raw_response = self.execute(Get_Sensor_Status())
         print("Raw response: ", format(raw_response))
@@ -216,8 +267,8 @@ class SLS_1500Device(ShdlcDeviceBase):
         int16 = unpack('>h', raw_response)
         print("Response signed Integer: {}".format(int16))
     
-    def Start_Continuous_Measurement(self):
-        self.execute(Start_Continuous_Measurement())
+    def Start_Continuous_Measurement(self,interval):
+        self.execute(Start_Continuous_Measurement(interval))
         print("Continuous measurement started")
     
     def Get_Continuous_Measurement_Status(self):
@@ -241,11 +292,20 @@ class SLS_1500Device(ShdlcDeviceBase):
         print(measurements)
         if plot:
             fig, ax = plt.subplots(1,1)
+            ax.set_xlabel("Time [ms]") 
+            ax.set_ylabel("Flow [mL/min]")
+            ax.set_title("Sensor Measurement")
             ax.set_ylim(-33000, 33000)
             ax.plot(measurements)
             plt.show()
         return measurements
     
+    def Get_Last_Measurement_Mode_Duration(self):
+        raw_response = self.execute(Get_Last_Measurement_Mode_Duration())
+        print("Raw response: ", format(raw_response))
+        uint32 = unpack('>I', raw_response)
+        print("Response Unsigned Integer: {}".format(uint32))
+
     def Set_Measurement_Type(self):
         self.execute(Set_Measurement_Type())
         print("Measurement type set to Flow")
@@ -256,12 +316,27 @@ class SLS_1500Device(ShdlcDeviceBase):
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
         
+    def Set_Resolution(self,resolution):
+        self.execute(Set_Resolution(resolution))
+        print("Resolution set")
+
     def Get_Resolution(self):
         raw_response = self.execute(Get_Resolution())
-        print("Raw response: ", format(raw_response))
+        # print("Raw response: ", format(raw_response))
         uint8 = unpack('>B', raw_response)
-        print("Response Unsigned Integer: {}".format(uint8))
+        print("Resolution bits: {}".format(uint8))
     
+    def Set_Calib_Field(self,calib_field):
+        self.execute(Set_Calib_Field(calib_field))
+        print("Calibration field set")
+    
+    def Get_Calib_Field(self):
+        raw_response = self.execute(Get_Calib_Field())
+        # print("Raw response: ", format(raw_response))
+        uint8 = unpack('>B', raw_response)
+        print("Calibration Field: {}".format(uint8))
+        
+
     def Set_Factory_Settings(self):
         self.execute(Set_Factory_Settings())
         print("Factory settings set")
@@ -272,15 +347,15 @@ class SLS_1500Device(ShdlcDeviceBase):
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
 
-    def Set_Linearization(self):
-        self.execute(Set_Linearization())
+    def Set_Linearization(self, bool):
+        self.execute(Set_Linearization(bool))
         print("Linearization set")
 
     def Get_Linearization(self):
         raw_response = self.execute(Get_Linearization())
-        print("Raw response: ", format(raw_response))
+        # print("Raw response: ", format(raw_response))
         bool = unpack('>?', raw_response)
-        print("Response Unsigned Integer: {}".format(bool)) 
+        print("Linearization: {}".format(bool)) 
     
     def Get_Flow_Unit(self):
         raw_response = self.execute(Get_Flow_Unit())
@@ -289,7 +364,7 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Response Unsigned Integer: {}".format(uint16))
         return raw_response
 
-    def Get_Scale_Factor(self):
+    def Get_Scale_Factor(self, vocal=False):
         raw_response = self.execute(Get_Scale_Factor())
         print("Raw response: ", format(raw_response))
         uint16 = unpack('>H', raw_response)
@@ -314,71 +389,121 @@ class SLS_1500Device(ShdlcDeviceBase):
         print("Raw response: ", format(raw_response))
         uint8 = unpack('>B', raw_response)
         print("Response Unsigned Integer: {}".format(uint8))
-    
-def decode_unit(bitcode):
-    intcode = int.from_bytes(bitcode, 'big', signed=False) 
-    vol_unit_code = int(intcode/256)
-    time_unit_code = int((intcode%256)/16)
-    dim_unit_code = int(intcode%16)
-    
-    time_dict = {0: r'', 1: r'$\mu$ s$^{-1}$', 2: r'ms$^{-1}$', 
-                 3: r's$^{-1}$', 4: r'min$^{-1}$'}
-    time_dict = {0: r'', 1: r'/$\mu$s$', 2: r'/ms', 
-                 3: r'/s', 4: r'/min'}
-    vol_dict = {0: r'L', 1:'L', 8:'L', 9:'g'}
-    
-    dim_dict = {3: 'n', 4: '$\mu$', 5:'m', 6:'c', 7:'d',
-                8:'', 9:'da', 10:'h', 11:'k', 12:'M', 13:'G'}
-    unit_string = dim_dict[dim_unit_code] + vol_dict[vol_unit_code] + time_dict[time_unit_code]
-    return unit_string
 
+    def animate(i,filename):
+        df = pd.read_csv(filename)
+        xs = df['ms']
+        ys = df['mL']
+        return xs, ys
+    
+    def Continuous_Measure_and_Save(self, duration_s, buffer_interval, plot=None):
+        # Measure and save the data for the specified duration of a buffer size of 100 measurements
+        print("Measurement and Save started %ds " %duration_s)
+        retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
+        
+        df = pd.DataFrame(columns=['ms','mL']) # create an empty dataframe
+        while True:
+            self.Start_Continuous_Measurement(buffer_interval)
+            start_time = time.time()
+            sleep(MEASURING_INTERVAL) #secondes
+            elapsed_time = time.time() - start_time
+            time_steps = elapsed_time / 100 # number of measurements per second
+            df['ms'] = pd.DataFrame(np.arange(start=time_steps, stop=time_steps*100*1000+1, step=time_steps)) # Fill the dataframe with the time
+            df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Fill the dataframe with the buffer
+            df.to_csv('output.csv', index=False, header=True) # Write the buffer to csv 
+            # ?(Not sure how much this function costs in time)
+            
+            if retrievals > 1:
+                for i in range(retrievals-1):
+                    start_time = time.time()
+                    sleep(MEASURING_INTERVAL) #secondes
+                    elapsed_time = time.time() - start_time
+                    time_steps = elapsed_time / 100 # number of measurements per second
+                    last_ms_value = df['ms'].iloc[-1]
+                    print("Last ms value")
+                    print(last_ms_value)
+                    df['ms'] = pd.DataFrame(np.arange(start=last_ms_value+time_steps, stop= last_ms_value+time_steps*100*1000+1, step=time_steps)) # Overwrite new dataframe with the time
+                    df['mL'] = pd.DataFrame(fs.Get_Measurement_Buffer()) # Overwrite new dataframe with the buffer
+                    df.to_csv('output.csv', index=False, header=False, mode="a") # Append the buffer to csv
+                    print("Data appended successfully")
+                    
+            self.Stop_Continuous_measurement() # Stopped the continuous measurement
+            # print("Time elapsed: %.6f seconds" % (time.time() - start_time))
+            
+            break
+        
+        # fig = plt.figure()
+        # ax1 = fig.add_subplot(1,1,1)
+        # ax1.clear()
+        # ax1.plot(df['ms'], df['mL'])
+        # ani = animation.FuncAnimation(fig, self.animate, interval=1000)
+        # plt.show()
+    
+        if plot:
+                self.Plot_Flow_CSV('output.csv')
 
-with ShdlcSerialPort(port='COM10', baudrate=115200) as port:
+    def Apply_Flow_Scale_Factor(self, filename):
+        df = pd.read_csv(filename)
+        column_name = 'mL'
+        df['mL'] = df['mL'].div(SCALE_FACTOR)
+        df.to_csv(filename, index=False)
+    
+    def Convert_ms_to_s(self, filename):
+        df = pd.read_csv(filename)
+        column_name = 'ms'
+        df['ms'] = df['ms'].div(1000)
+        df.to_csv(filename, index=False)
+        df = df.rename(columns={"ms":'s'})
+
+    def Plot_Flow_CSV(self, filename):
+        self.Apply_Flow_Scale_Factor(filename)
+        self.Convert_ms_to_s(filename)
+        df = pd.read_csv(filename)
+        fig, ax = plt.subplots(1,1)
+        ax.set_ylim(-60, 60)
+        ax.plot('ms','mL',data=df, label='Flow Measurment')
+        ax.plot(data=df, label='Flow Measurment')
+        # ax.set_xlabel("Time [ms]", fontsize=20)
+        ax.set_xlabel("Time [s]", fontsize=20)
+        ax.set_ylabel("Flow [mL/min]", fontsize=20)
+        ax.tick_params(axis='both',which='major',labelsize=16)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+    
+        plt.legend(fontsize=16, frameon=False)
+        plt.tight_layout()
+        plt.show()
+
+    
+    def Sensor_Command_Settings(self,
+                                resolution=None,
+                                calib_field=None,
+                                set_linearization=None,
+                                ):
+        self.Get_Resolution()
+        self.Get_Calib_Field()
+        self.Get_Linearization()
+    
+    def Get_Sensor_Information(self):
+        self.Get_Version()
+        self.Get_Sensor_Status()
+        self.Get_Flow_Unit() # ml/min --> 8*256 + 4*16 + 5*1 = 2117
+        self.Get_Scale_Factor() # 500
+        self.Get_Measurement_Type
+        self.Get_Measurement_Data_Type()
+        self.Get_Heater_Mode()
+    
+    def Single_Measurement(self):
+        self.Start_Single_Measurement()
+        sleep(0.5) #secondes
+        self.Get_Single_Measurement()
+        
+
+with ShdlcSerialPort(port='COM3', baudrate=115200) as port:
     fs = SLS_1500Device(ShdlcConnection(port), slave_address=0)
-
-#     # Check and Start-Up
-#     # print("Get_Sensor_Status")
-#     # fs.Get_Sensor_Status()
-#     # print("Get_Measurement_Type")
-#     # fs.Get_Measurement_Type()
-#     # print("Get_Resolution")
-#     # fs.Get_Resolution()
-    print("Get_Flow_Unit")
-    bitcode = fs.Get_Flow_Unit()
-    unit_string = decode_unit(bitcode)
-    print(unit_string)
     
-#     mycode = b'\x08E'
-    # print("Get_Linearization")
-    # fs.Get_Linearization()
-    # print("Get_Scale_Factor")
-    # fs.Get_Scale_Factor()
-    # print("Get_Measurement_Data_Type")
-    # fs.Get_Measurement_Data_Type()
-    # print("Get_Heater_Mode")
-    # fs.Get_Heater_Mode()
-    
+    # Sensor Command Settings
+    # fs.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
-
-    # Single Measurement
-    # fs.Start_Single_Measurement()
-    # sleep(0.5) #secondes
-    # fs.Get_Single_Measurement()
-    
-    # # Continuous Measurement
-    # fs.Start_Continuous_Measurement()
-    # sleep(5) #secondes
-    # fs.Get_Continuous_Measurement_Status()
-    # buffer_data = fs.Get_Measurement_Buffer(plot=True)
-    # fs.Stop_Continuous_measurement()
-    
-    # # # Saving Data to CSV
-    # df = pd.DataFrame(buffer_data)
-    # df.to_csv('output.csv', index=False, header=False)
-
-
-
-
-  
-
-  
+    # Multiple Continuous Measurement with Buffer
+    fs.Continuous_Measure_and_Save(duration_s=10, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=True
