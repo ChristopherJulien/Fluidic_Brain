@@ -1,6 +1,6 @@
 from Digitizer_Client import *
 from syringe_control import *
-import Adele.sls_1500 as flow_client
+import SLS_1500 as flow_client
 def create_folder(path):
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -49,14 +49,13 @@ def experiment(flow_rates,digitizer,channels,pump,syringe,path,runtime=60,run_ba
                 ans = input("Are you done?")
 
 
-
 if __name__=="__main__":
     path="D:/fluidic_network/valve_colepalmer_30s_4/"
     create_folder(path)
     pump_flow_rates = [10,20,50,100,200,500,1000,2000,5000]
     runtime = 60
     digitizer,channels = init_client(mode="analog",analog_sample_rate=5000,capture_time=runtime)
-    syringeA = Syringe("a", '30', 'bdp')
+    syringeA = Syringe("a", '1', 'bdp')
     pump = Pump("A", "COM5", syringe1=syringeA)
     pump.stop()
     experiment(flow_rates=pump_flow_rates,digitizer=digitizer,channels=channels,pump=pump,syringe=syringeA,path=path,runtime=runtime)

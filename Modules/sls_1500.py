@@ -437,15 +437,6 @@ class SLS_1500Device(ShdlcDeviceBase):
             i+=1
             sleep(0.1)
         
-        # fig = plt.figure()
-        # ax1 = fig.add_subplot(1,1,1)
-        # ax1.clear()
-        # ax1.plot(df['ms'], df['mL'])
-        # ani = animation.FuncAnimation(fig, self.animate, interval=1000)
-        # plt.show()
-    
-        if plot:
-                self.Plot_Flow_CSV(filename)
 
     def Apply_Flow_Scale_Factor(self, filename):
         df = pd.read_csv(filename)
