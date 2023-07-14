@@ -23,8 +23,8 @@ def get_path_case(case, subcase):
             GLYCEROL:('Data_Calibration\\glycerol\\sls',r'Data_Calibration\\glycerol\\sls\\.*\\sls_flow_rate_forward_(-?\d+\.\d+)_ul_min', "Medium: Glycerol - SLS 1500")
         },
         FLG: {
-            WATER: ('Data_Calibration\\water\\flg', r'Data_Calibration\\water\\flg\\.*\\flg_flow_rate_forward_(-?\d+\.\d+)_ul_min', "Medium: Water - FLG 1500"),
-            GLYCEROL: ('Data_Calibration\\glycerol\\flg', r'Data_Calibration\\glycerol\\flg\\.*\\flg_flow_rate_forward_(-?\d+\.\d+)_ul_min', "Medium: Glycerol - FLG 1500")
+            WATER: ('Data_Calibration\\water\\flg', r'Data_Calibration\\water\\flg\\.*\\flg_flow_rate_forward_(-?\d+\.\d+)_ul_min', "Medium: Water - FLG M+"),
+            GLYCEROL: ('Data_Calibration\\glycerol\\flg', r'Data_Calibration\\glycerol\\flg\\.*\\flg_flow_rate_forward_(-?\d+\.\d+)_ul_min', "Medium: Glycerol - FLG M+")
         }
     }
     return switch.get(case, {}).get(subcase, 'Invalid case or subcase')
@@ -38,12 +38,12 @@ class Plot:
         pass
 
 
-    def all_q_vs_qs_case(self, case:int, sub_case:int):
+    def all_q_vs_qs_case(self, device:int, sub_case:int):
         q_set_list = []
         q_measured_list = []
         q_std_list = []
         q_percent_error_list = []
-        folder_path, match_pattern ,plot_title = get_path_case(case, sub_case)
+        folder_path, match_pattern ,plot_title = get_path_case(device, sub_case)
 
         # match_pattern = 'Data_Calibration\\water\\sls\\*\\sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
         
@@ -53,13 +53,24 @@ class Plot:
             for file in files:
                 if file.endswith('.csv'):
                     file_path = os.path.join(root, file)
-                    # print(file_path)
                     df = pd.read_csv(file_path)
-                    mL_min= df['mL/min'].tolist() 
-                    s = [(value / 1000) for value in df['ms'].tolist()] 
+
+
+# NEED TO FIX THIS TO SOMETHIGN SIMIALAR
+
+                    # if 'mL/min' in df.columns:
+                    mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
+                    #     s = [(value / 1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
+                    
+                    # if '# time (s)' in df.columns:
+                    s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['# time (s)'].tolist()
+
+                    
+
+
+                    
                     
                     s = np.array(s)
-                    # print(s)
                     low_filter = s > 2
                     q = np.array(mL_min)
                     q = q[low_filter]
@@ -73,7 +84,7 @@ class Plot:
                         sys.exit(1)
 
                     q_average = np.average(q)
-                    q_error = abs(q_average - flow_rate / 1000) / (flow_rate / 1000) * 100
+                    q_error = abs(q_average - flow_rate / 1000) / (flow_rate / 1000) * 100 if flow_rate != 0 else 0
                     q_percent_error_list.append(q_error)
 
                     q_std = np.std(q)
@@ -277,9 +288,9 @@ class Plot:
 #     return pressure
         
 if __name__=="__main__":
-    plot = Plot(SLS1500_flag = True)
+    # plot = Plot(SLS1500_flag = True)
     # plot_module.q_vs_qs_and_relative_error()
     # plot_module.flow_rate_over_time()
 
-    # plot = Plot()
-    plot.all_q_vs_qs_case(SLS,WATER)
+    plot = Plot()
+    plot.all_q_vs_qs_case(FLG,GLYCEROL)
