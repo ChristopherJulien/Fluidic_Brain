@@ -38,19 +38,20 @@ def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=
 # integrate the delta p (v) curve
 
 if __name__=="__main__":
-    SLS1500_flag = False
+    SLS1500_flag = True
     syringe_name = "B"
-    syringe_volume = "1" # mL
+    syringe_volume = "5" # mL
     syringe_type = "bdp"
-    runtime_s = 20  # Set the runtime value to 10 seconds
-    start_value = np.array([0.0])  # First value of appended to flow rates in mL/min
-    flow_range = np.arange(0.01, 0.11, 0.01)  # Flow Rate ranges and step size in mL/min
-    end_value = np.array([0.12])  # First value of appended to flow rates in mL/min
+    runtime_s = 10  # Set the runtime value to 10 seconds
+    # start_value = np.array([-2.0])  # First value of appended to flow rates in mL/min
+    flow_range = np.arange(0, 2.1, 0.2)  # Flow Rate ranges and step size in mL/min
+    # end_value = np.array([2.0])  # First value of appended to flow rates in mL/min
 
-    pump_flow_rates = np.hstack((start_value, flow_range,end_value)) * 1000  # Concatenate x1 and x2 arrays, then multiply by 1000 (ul/min)
+    # pump_flow_rates = np.hstack((start_value, flow_range,end_value)) * 1000  # Concatenate x1 and x2 arrays, then multiply by 1000 (ul/min)
+    pump_flow_rates = flow_range*1000
     pump_flow_rates = pump_flow_rates[::-1]
     print("FLow Rates [uL/min]: {}".format(pump_flow_rates))
-    volume = pump_flow_rates * runtime_s / (60*1000)  # Calculate the volume based on pump flow rates and runtime (ml)
+    volume = abs(pump_flow_rates )* runtime_s / (60*1000)  # Calculate the volume based on pump flow rates and runtime (ml)
     vtot = np.sum(volume)  # Calculate the total volume by summing all elements in the volume array
     minutes_tot = len(pump_flow_rates) * runtime_s //60
     seconds_tot =len(pump_flow_rates) * runtime_s %60 + len(pump_flow_rates)
@@ -71,14 +72,14 @@ if __name__=="__main__":
     if SLS1500_flag:
         port = ShdlcSerialPort(port='COM3', baudrate=115200)  # Create a serial port object for communication on port 'COM3' with baudrate 115200
         flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)  # Create a flow meter device using the ShdlcConnection and the port, with a slave address of 0
-        # experiment(flow_rates=pump_flow_rates, pump=pumpA, syringe=syringeA, runtime=runtime_s, flow_meter=flow_meter)
+        experiment(flow_rates=pump_flow_rates, pump=pump, syringe=syringe, runtime=runtime_s, flow_meter=flow_meter)
     
     else:
         microFlowMeter = MicroFlowMeter()
         experiment(flow_rates=pump_flow_rates, pump=pump, syringe=syringe, runtime=runtime_s, flow_meter=microFlowMeter, SL1500_flag=False)
     pump.stop()  # Stop the pump after the experiment is completed
    
-    plot = Plot(SLS1500_flag)
-    plot.flow_rate_over_time()
-    plot.q_vs_qs_and_relative_error()
+    # plot = Plot(SLS1500_flag)
+    # plot.flow_rate_over_time()
+    # plot.q_vs_qs_and_relative_error()
     

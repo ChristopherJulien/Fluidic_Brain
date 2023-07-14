@@ -8,6 +8,7 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from natsort import natsorted
 
 class Plot:
     def __init__(self,SLS1500_flag ):
@@ -26,11 +27,13 @@ class Plot:
             file_pattern = 'sls_flow_rate_forward_*.csv'
             search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern))
+            files = natsorted(files)
         else:
             print("FLG Plotting")
             file_pattern = 'flg_flow_rate_forward_*.csv'
             search_pattern = r'flg_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern))
+            files = natsorted(files)
 
         for i, filename in enumerate(files):
             match = re.search(search_pattern, filename)
@@ -47,7 +50,7 @@ class Plot:
             s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
 
             s = np.array(s)
-            low_filter = s > 1
+            low_filter = s > 2
             q = np.array(mL_min)
             q = q[low_filter]
     
@@ -91,13 +94,15 @@ class Plot:
             file_pattern = 'sls_flow_rate_forward_*.csv'
             search_pattern = r'sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern)) 
-            
+            files = natsorted(files)
         else:
             print("FLG Plotting")
             file_pattern = 'flg_flow_rate_forward_*.csv'
             search_pattern = r'flg_flow_rate_forward_(-?\d+\.\d+)_ul_min'
             files = glob.glob(os.path.join(self.directory, file_pattern)) 
-            
+            files = natsorted(files)
+              
+        
         colors = cm.viridis(np.linspace(0.1,0.9, len(files)))
         for i, filename in enumerate(files):
             match = re.search(search_pattern, filename)
@@ -127,10 +132,7 @@ class Plot:
         plt.rcParams['legend.edgecolor'] = '1'
         plt.legend(fontsize=12, frameon=False)  # Decrease the fontsize value to make the legend smaller
 
-
-
         plt.show()
-
         # save_directory = os.path.join(directory, "Flow_Calibration_plots")
         # os.makedirs(save_directory, exist_ok=True)
         # save_path = os.path.join(save_directory, "100uL_min_to_10mL_min-{}.png".format(datetime.now().strftime("%d-%m-%Y_%H-%M-%S")))
@@ -151,10 +153,8 @@ class Plot:
 #     pressure [volt_signal < 0.5] = np.nan
 #     pressure [volt_signal > 4.5] = np.nan
 #     return pressure
-
         
-
 if __name__=="__main__":
-    plot_module = Plot(SLS1500_flag = False)
+    plot_module = Plot(SLS1500_flag = True)
     plot_module.q_vs_qs_and_relative_error()
     plot_module.flow_rate_over_time()
