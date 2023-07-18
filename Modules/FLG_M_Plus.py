@@ -7,7 +7,23 @@ from Fluigent.SDK import fgt_get_sensorUnit, fgt_get_sensorRange, fgt_get_sensor
 ## Initialize the session
 # This step is optional, if not called session will be automatically created
 fgt_init()
+# could make it soo that we only initialize the flow sensor
+# Detect all controllers
+# SNs, types = fgt_detect()
+# controllerCount = len(SNs)
+# print('Number of controllers detected: {}'.format(controllerCount))
 
+# # List all found controllers' serial number and type
+# for i, sn in enumerate(SNs):
+#     print('Detected instrument at index: {}, ControllerSN: {}, type: {}'\
+#           .format(i, sn, str(types[i])))
+
+# print('')
+## Initialize specific instruments
+# Initialize only specific instrument controllers here If you do not want
+# a controller in the list or if you want a specific order (e.g. LineUP
+# before MFCS instruments), rearrange parsed SN table
+# fgt_init(SNs)
 
 class MicroFlowMeter:
     def __init__(self):
@@ -35,13 +51,15 @@ class MicroFlowMeter:
             measurement = fgt_get_sensorValue(0)            
             flow_rate_list.append(measurement)
             time_list.append(time.time()-t_start)
-            print("Flow rate: ", measurement, " Time", time.time()-t_start)
+            # print("Flow rate: ", measurement, " Time", time.time()-t_start)
             time.sleep(interval)
         if save_data:
             print(len(time_list))
             print(len(flow_rate_list))
             np.savetxt(filename, np.c_[time_list, flow_rate_list], delimiter=',', header='s,uL/min', comments='')
-            
+        
+        fgt_close()
+
         return flow_rate_list,time_list
 
 

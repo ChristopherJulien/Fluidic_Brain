@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import sys
 from datetime import datetime
 import numpy as np
+from numpy.polynomial.polynomial import Polynomial
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from natsort import natsorted
@@ -37,7 +38,7 @@ class Plot:
     def set_search_directory(self,SLS1500_flag,water_flag):
         pass
 
-    def all_q_vs_qs_case(self, device:int, sub_case:int):
+    def all_q_vs_qs_case(self, device:int, sub_case:int, polyfit=True):
         q_set_list = []
         q_measured_list = []
         q_std_list = []
@@ -50,8 +51,10 @@ class Plot:
                     file_path = os.path.join(root, file)
                     df = pd.read_csv(file_path)
 
-                    mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['uL/min'].tolist()]
-                    s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
+                    # mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['uL/min'].tolist()]
+                    # s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
+                    mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
+                    s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['# time (s)'].tolist()
 
                     s = np.array(s)
                     low_filter = s > 2
@@ -75,12 +78,25 @@ class Plot:
                     q_std_list.append(q_std)
                     q_set_list.append(flow_rate / 1000)
                 
+        # Make Polynomial Fit Graph
+        degree = 1
+        poly = Polynomial.fit(q_set_list, q_measured_list, deg=degree)
+        
+        # Generate points along the x-axis for plotting the fitted line
+        q_set_fit = np.linspace(min(q_set_list), max(q_set_list), 100)
+        
+        # Calculate the fitted values for the y-axis using the polynomial function
+        q_measured_fit = poly(q_set_fit)
+        
+
+
         plt.figure(figsize=(10, 5)) # Fix to make plots appear larger
 
         # Plot measured vs. set flow rate
         plt.subplot(1, 2, 1)
         plt.errorbar(q_set_list, q_measured_list, yerr=q_std_list, fmt='o', capsize=5, label='Measured')
         plt.plot(q_set_list, q_set_list, label='Set', linestyle='--')
+        plt.plot(q_set_fit, q_measured_fit, color='red', label='Fitted Line  (Degree '+str(degree) + ')')
         plt.xlabel("Set Flow Rate (mL/min)")
         plt.ylabel("Measured Flow Rate (mL/min)")
         plt.title("Flow Rate Measurement")
@@ -108,7 +124,7 @@ class Plot:
         print("Plotting All Q vs Qs")
         plt.show()
             
-   
+
     def q_vs_qs_and_relative_error(self):
         assert self.SLS1500_flag is not None, "SLS1500_flag must be set before calling this function"
         q_set_list = []
@@ -142,6 +158,8 @@ class Plot:
             df = pd.read_csv(filename)
             mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['uL/min'].tolist()]
             s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
+            # mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
+            # s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['# time (s)'].tolist()
 
             s = np.array(s)
             low_filter = s > 2
@@ -255,5 +273,5 @@ if __name__=="__main__":
     # plot.flow_rate_over_time()
 
     plot = Plot()
-    plot.all_q_vs_qs_case(FLG,GLYCEROL)
+    plot.all_q_vs_qs_case(FLG,WATER)
 
