@@ -37,39 +37,22 @@ class Plot:
     def set_search_directory(self,SLS1500_flag,water_flag):
         pass
 
-
     def all_q_vs_qs_case(self, device:int, sub_case:int):
         q_set_list = []
         q_measured_list = []
         q_std_list = []
         q_percent_error_list = []
         folder_path, match_pattern ,plot_title = get_path_case(device, sub_case)
-
-        # match_pattern = 'Data_Calibration\\water\\sls\\*\\sls_flow_rate_forward_(-?\d+\.\d+)_ul_min'
         
-
-        print("All q vs. qs")
         for root, dirs, files in os.walk(folder_path):
             for file in files:
                 if file.endswith('.csv'):
                     file_path = os.path.join(root, file)
                     df = pd.read_csv(file_path)
 
+                    mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['uL/min'].tolist()]
+                    s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
 
-# NEED TO FIX THIS TO SOMETHIGN SIMIALAR
-
-                    # if 'mL/min' in df.columns:
-                    mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
-                    #     s = [(value / 1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
-                    
-                    # if '# time (s)' in df.columns:
-                    s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['# time (s)'].tolist()
-
-                    
-
-
-                    
-                    
                     s = np.array(s)
                     low_filter = s > 2
                     q = np.array(mL_min)
@@ -122,31 +105,10 @@ class Plot:
         plt.suptitle(plot_title, fontsize=16)
 
         plt.tight_layout()
+        print("Plotting All Q vs Qs")
         plt.show()
             
-
-
-        
-                    # # # sys.exit(1)
-
-                    # match = re.search(search_pattern, file_path)
-                    # if match:
-                    #     flow_rate = float(match.group(1))
-                    # else:
-                    #     print("Error: Could not parse file name: {}".format(file_path))
-                    #     sys.exit(1)
-                    
-                    # df = pd.read_csv(file_path)
-                    # mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['uL/min'].tolist()]
-                    # s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
-
-                    # print("mL/min: ", mL_min)
-                    # print("s: ", s)
-
-
-        
-            
-    # Function to plot measured vs. set flow rate
+   
     def q_vs_qs_and_relative_error(self):
         assert self.SLS1500_flag is not None, "SLS1500_flag must be set before calling this function"
         q_set_list = []
@@ -288,9 +250,10 @@ class Plot:
 #     return pressure
         
 if __name__=="__main__":
-    # plot = Plot(SLS1500_flag = True)
-    # plot_module.q_vs_qs_and_relative_error()
-    # plot_module.flow_rate_over_time()
+    # plot = Plot(SLS1500_flag = False)
+    # plot.q_vs_qs_and_relative_error()
+    # plot.flow_rate_over_time()
 
     plot = Plot()
     plot.all_q_vs_qs_case(FLG,GLYCEROL)
+

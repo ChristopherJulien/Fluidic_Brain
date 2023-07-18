@@ -31,20 +31,16 @@ def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=
 # Glycerol Test
 # --------------------
 # FLG (Flow duration of  20 seconds)
+# 0.1- 2 mL/min stps 0.1mL/min ! wil need a 1ml syringe which can be found on the fifth floor!)
 # 0.01 0 0.1 ml/min stps 0.010 mL/min stps
-# see if you can make a lookup table from qmeas and qset
-# see if it can record forward and back flow and if so repeat the top test in the negative space
-# EXTRA
-# integrate the delta p (v) curve
-
 if __name__=="__main__":
-    SLS1500_flag = True
+    SLS1500_flag = False
     syringe_name = "B"
-    syringe_volume = "5" # mL
+    syringe_volume = "10" # mL
     syringe_type = "bdp"
-    runtime_s = 10  # Set the runtime value to 10 seconds
+    runtime_s = 20  # Set the runtime value to 10 seconds
     # start_value = np.array([-2.0])  # First value of appended to flow rates in mL/min
-    flow_range = np.arange(0, 2.1, 0.2)  # Flow Rate ranges and step size in mL/min
+    flow_range = np.arange(0.1, 2.1, 0.1)  # Flow Rate ranges and step size in mL/min
     # end_value = np.array([2.0])  # First value of appended to flow rates in mL/min
 
     # pump_flow_rates = np.hstack((start_value, flow_range,end_value)) * 1000  # Concatenate x1 and x2 arrays, then multiply by 1000 (ul/min)
@@ -72,7 +68,7 @@ if __name__=="__main__":
     if SLS1500_flag:
         port = ShdlcSerialPort(port='COM3', baudrate=115200)  # Create a serial port object for communication on port 'COM3' with baudrate 115200
         flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)  # Create a flow meter device using the ShdlcConnection and the port, with a slave address of 0
-        experiment(flow_rates=pump_flow_rates, pump=pump, syringe=syringe, runtime=runtime_s, flow_meter=flow_meter)
+        # experiment(flow_rates=pump_flow_rates, pump=pump, syringe=syringe, runtime=runtime_s, flow_meter=flow_meter)
     
     else:
         microFlowMeter = MicroFlowMeter()
