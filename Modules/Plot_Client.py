@@ -10,11 +10,14 @@ from numpy.polynomial.polynomial import Polynomial
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from natsort import natsorted
+import pickle
 
 SLS=1
 FLG=2
 WATER=3
 GLYCEROL=4
+
+
 
 def get_path_case(case, subcase):
     print("Getting path")
@@ -35,6 +38,17 @@ class Plot:
         self.directory = os.path.dirname(os.path.abspath(__file__)) 
         self.SLS1500_flag = SLS1500_flag
     
+    def unpickle(self, filename):
+        inputfile = open(filename,'rb')
+        pickled = pickle.load(inputfile)
+        inputfile.close()
+        return pickled
+
+    def nupickle(self,data,filename):
+        outputfile = open(filename,'wb')
+        pickle.dump(data,outputfile,protocol=pickle.HIGHEST_PROTOCOL)
+        outputfile.close()
+
     def set_search_directory(self,SLS1500_flag,water_flag):
         pass
 
@@ -51,10 +65,10 @@ class Plot:
                     file_path = os.path.join(root, file)
                     df = pd.read_csv(file_path)
 
-                    # mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['uL/min'].tolist()]
-                    # s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
-                    mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
-                    s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['# time (s)'].tolist()
+                    mL_min = df['mL/min'].tolist() if device == SLS else [(value / 1000) for value in df['uL/min'].tolist()]
+                    s = [(value/1000) for value in df['ms'].tolist()] if device == SLS else df['s'].tolist()
+                    # mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
+                    # s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['# time (s)'].tolist()
 
                     s = np.array(s)
                     low_filter = s > 2
@@ -87,12 +101,17 @@ class Plot:
         
         # Calculate the fitted values for the y-axis using the polynomial function
         q_measured_fit = poly(q_set_fit)
-        
 
+        # Get Pickles files
+        filename = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Previous_Data_Calibration\glycerol\sls\msmt_data_1.pkl"
+        data_dict = self.unpickle(filename=filename)
+        p_q_measured_list = data_dict['flow_mean_mlpermin']
+        p_q_std_list = data_dict['flow_std_mlpermin']
+        p_q_set_list = data_dict['flow_imposed_mlpermin']
 
         plt.figure(figsize=(10, 5)) # Fix to make plots appear larger
 
-        # Plot measured vs. set flow rate
+        # Plot q measured vs. q set
         plt.subplot(1, 2, 1)
         plt.errorbar(q_set_list, q_measured_list, yerr=q_std_list, fmt='o', capsize=5, label='Measured')
         plt.plot(q_set_list, q_set_list, label='Set', linestyle='--')
@@ -100,7 +119,11 @@ class Plot:
         plt.xlabel("Set Flow Rate (mL/min)")
         plt.ylabel("Measured Flow Rate (mL/min)")
         plt.title("Flow Rate Measurement")
+        # Plot pickledq measured vs. q set
+
+        plt.errorbar(p_q_set_list, p_q_measured_list, yerr=p_q_std_list, color='green', fmt='o', capsize=5, label='Previous Measured')
         plt.legend()
+        # plt.show()
 
         # Remove right and top spines
         plt.gca().spines['right'].set_visible(False)
@@ -124,7 +147,6 @@ class Plot:
         print("Plotting All Q vs Qs")
         plt.show()
             
-
     def q_vs_qs_and_relative_error(self):
         assert self.SLS1500_flag is not None, "SLS1500_flag must be set before calling this function"
         q_set_list = []
@@ -156,10 +178,8 @@ class Plot:
                 sys.exit(1)
 
             df = pd.read_csv(filename)
-            mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['uL/min'].tolist()]
-            s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
-            # mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['flowrate µl/min'].tolist()]
-            # s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['# time (s)'].tolist()
+            mL_min = df['mL/min'].tolist() if self.SLS1500_flag==True else [(value / 1000) for value in df['uL/min'].tolist()]
+            s = [(value/1000) for value in df['ms'].tolist()] if self.SLS1500_flag ==True else df['s'].tolist()
 
             s = np.array(s)
             low_filter = s > 2
@@ -175,9 +195,10 @@ class Plot:
             q_std_list.append(q_std)
             q_set_list.append(flow_rate / 1000)
 
+        
         plt.figure(figsize=(10, 5)) # Fix to make plots appear larger
 
-        # Plot measured vs. set flow rate   
+        # q vs qs
         plt.subplot(1, 2, 1)
         plt.errorbar(q_set_list, q_measured_list, yerr=q_std_list, fmt='o', capsize=5, label='Measured')
         plt.plot(q_set_list, q_set_list, label='Set', linestyle='--')
@@ -228,8 +249,8 @@ class Plot:
                 sys.exit(1)
 
             df = pd.read_csv(filename)
-            mL_min = df['mL/min'].tolist() if self.SLS1500_flag else [(value / 1000) for value in df['uL/min'].tolist()]
-            s = [(value / 1000) for value in df['ms'].tolist()] if self.SLS1500_flag else df['s'].tolist()
+            mL_min = df['mL/min'].tolist() if self.SLS1500_flag == SLS else [(value / 1000) for value in df['uL/min'].tolist()]
+            s = [(value/1000) for value in df['ms'].tolist()] if self.SLS1500_flag == SLS else df['s'].tolist()
             ax.plot(s, mL_min, label='q measured {} mL/min'.format(flow_rate / 1000), c= colors[i])
 
         ax.autoscale(axis='y')
@@ -268,10 +289,13 @@ class Plot:
 #     return pressure
         
 if __name__=="__main__":
-    # plot = Plot(SLS1500_flag = False)
+    # plot = Plot(SLS1500_flag=True)
     # plot.q_vs_qs_and_relative_error()
     # plot.flow_rate_over_time()
-
+    
     plot = Plot()
-    plot.all_q_vs_qs_case(FLG,WATER)
+    plot.all_q_vs_qs_case(SLS, GLYCEROL)
+    
+    
+    
 

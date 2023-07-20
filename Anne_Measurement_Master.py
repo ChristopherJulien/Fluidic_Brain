@@ -60,7 +60,6 @@ def setup_experiment(nb_controllers: int=1):
     fgt_close()
     print("Setup closed")
 
-
 class Ramp:
     def __init__(self, nb_controllers: int=1, exp_name: str = None) -> None:
         self.nb_controllers = nb_controllers

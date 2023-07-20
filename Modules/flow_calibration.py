@@ -10,9 +10,6 @@ from SLS_1500 import *
 from FLG_M_Plus import *
 from Plot_Client import *
 
-def experiment_name(Sls1500_flag,):
-    pass
-
 def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=True):
     assert flow_meter is not None, "Flow meter not connected"
 
@@ -28,19 +25,14 @@ def experiment(flow_rates,pump,syringe,runtime=None,flow_meter=None,SL1500_flag=
         pump.stop()
         time.sleep(1) # Interval between experiments
 
-# Glycerol Test
-# --------------------
-# FLG (Flow duration of  20 seconds)
-# 0.1- 2 mL/min stps 0.1mL/min ! wil need a 1ml syringe which can be found on the fifth floor!)
-# 0.01 0 0.1 ml/min stps 0.010 mL/min stps
 if __name__=="__main__":
-    SLS1500_flag = False
+    SLS1500_flag = True
     syringe_name = "B"
-    syringe_volume = "10" # mL
+    syringe_volume = "5" # mL
     syringe_type = "bdp"
-    runtime_s = 20  # Set the runtime value to 10 seconds
+    runtime_s = 10  # Set the runtime value to 10 seconds
     # start_value = np.array([-2.0])  # First value of appended to flow rates in mL/min
-    flow_range = np.arange(0.1, 2.1, 0.1)  # Flow Rate ranges and step size in mL/min
+    flow_range = np.arange(0, 20.1, 2.0)  # Flow Rate ranges and step size in mL/min
     # end_value = np.array([2.0])  # First value of appended to flow rates in mL/min
 
     # pump_flow_rates = np.hstack((start_value, flow_range,end_value)) * 1000  # Concatenate x1 and x2 arrays, then multiply by 1000 (ul/min)
@@ -49,10 +41,14 @@ if __name__=="__main__":
     print("FLow Rates [uL/min]: {}".format(pump_flow_rates))
     volume = abs(pump_flow_rates )* runtime_s / (60*1000)  # Calculate the volume based on pump flow rates and runtime (ml)
     vtot = np.sum(volume)  # Calculate the total volume by summing all elements in the volume array
-    minutes_tot = len(pump_flow_rates) * runtime_s //60
-    seconds_tot =len(pump_flow_rates) * runtime_s %60 + len(pump_flow_rates)
+    minutes_tot = (len(pump_flow_rates) * runtime_s + len(pump_flow_rates)) //60
+    seconds_tot =(len(pump_flow_rates) * runtime_s + len(pump_flow_rates)) %60 
     print("Total volume {:.2f} mL".format(vtot))  # Print the total volume (ml 
     print("Total time: {}mins {}s".format(minutes_tot,seconds_tot))  # Print the total volume (ml
+
+    if int(syringe_volume) < vtot:
+        print("Total volume {:.2f}mL exceeds syringe volume {}mL".format(vtot,syringe_volume))
+        sys.exit()
 
     input_dic = {"SLS1500_flag":SLS1500_flag,"syringe_name":syringe_name,"syringe_volume":syringe_volume,"syringe_type":syringe_type,"runtime_s":runtime_s,"pump_flow_rates":pump_flow_rates.tolist(),"vtot":vtot,"minutes_tot":minutes_tot,"seconds_tot":seconds_tot}
     output_folder = os.path.join(os.getcwd(),"output")
@@ -72,7 +68,7 @@ if __name__=="__main__":
     
     else:
         microFlowMeter = MicroFlowMeter()
-        experiment(flow_rates=pump_flow_rates, pump=pump, syringe=syringe, runtime=runtime_s, flow_meter=microFlowMeter, SL1500_flag=False)
+        # experiment(flow_rates=pump_flow_rates, pump=pump, syringe=syringe, runtime=runtime_s, flow_meter=microFlowMeter, SL1500_flag=False)
     pump.stop()  # Stop the pump after the experiment is completed
    
     # plot = Plot(SLS1500_flag)
