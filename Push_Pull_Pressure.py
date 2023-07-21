@@ -18,7 +18,7 @@ p_max_1 = ContextVar('p_max_1')
 
 
 @contextmanager
-def setup_experiment(nb_controllers: int=1):
+def Pressure_Controller(nb_controllers: int=1):
     """Context manager to setup the experiment"""
     assert nb_controllers in [1, 2]
 
@@ -60,7 +60,7 @@ def setup_experiment(nb_controllers: int=1):
     fgt_close()
     print("Setup closed")
 
-class Ramp:
+class PP_Pressure:
     def __init__(self, nb_controllers: int=1, exp_name: str = None) -> None:
         self.nb_controllers = nb_controllers
         self.exp_name = exp_name
@@ -194,8 +194,8 @@ def experiment_cycle_single_controller(filename="20230208_quick",
                             start_p=0, max_p=300, min_p=-100, step_size=25,
                             plateau_time=30):
     """Time : 12*30s = 6min"""
-    ramp = Ramp(nb_controllers=1, exp_name=filename)
-    with setup_experiment(nb_controllers=ramp.nb_controllers):
+    ramp = PP_Pressure(nb_controllers=1, exp_name=filename)
+    with Pressure_Controller(nb_controllers=ramp.nb_controllers):
         
         nstep_up1 = int((max_p - start_p)/step_size)+1
         max_p = start_p + step_size*(nstep_up1-1)
@@ -236,9 +236,9 @@ if __name__ == "__main__":
     step_size = int((Pmax-Pmin)/20.)
     filestring = r'./node_tube_{:s}cm_ID_{:s}_checkvalve_node_fine/input_ramp'.format(Lstring, IDstring)
     
-    experiment_cycle_single_controller(filename=filestring,
-                                        min_p=Pmin,
-                                        max_p=Pmax,
-                                        step_size=step_size,
-                                        plateau_time=plateau_time)
+    experiment_cycle_single_controller(r'./test/input_ramp',
+                                        min_p=0,
+                                        max_p=500,
+                                        step_size=100,
+                                        plateau_time=2.2)
     

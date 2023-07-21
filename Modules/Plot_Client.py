@@ -103,7 +103,7 @@ class Plot:
         q_measured_fit = poly(q_set_fit)
 
         # Get Pickles files
-        filename = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Previous_Data_Calibration\glycerol\sls\msmt_data_1.pkl"
+        filename = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Previous_Data_Calibration\glycerol\sls\msmt_data_2.pkl"
         data_dict = self.unpickle(filename=filename)
         p_q_measured_list = data_dict['flow_mean_mlpermin']
         p_q_std_list = data_dict['flow_std_mlpermin']
