@@ -4,45 +4,74 @@
 # Maybe talk to Anne about the specific pickle structures for that
 
 # Need also to control the fluigent to get the corresponding pressure on the pressure ramp 
-
 from Push_Pull_Pressure import *
 
-def course_pressure_sweep(self,pressure_meter,pressure_rates,runtime):
-    for pressure in pressure_rates:
-        pressure_meter.set_pressure(pressure)
-        time.sleep(runtime)
-        pressure_meter.stop()
-        time.sleep(1)
-    pass
+def experiment_single_cycle(dict):
+    nb_controllers = dict["nb_controllers"]
+    file_string = dict["file_string"]
+    plateau_time = dict["plateau_time"]
+    max_p = dict["Pmax"]
+    min_p = dict["Pmin"]
+    step_size = dict["step_size"]
 
-def fine_pressure_sweep(self):
-    pass
+    ramp = PP_Pressure(nb_controllers,file_string)
+    with Pressure_Controller(nb_controllers=ramp.nb_controllers):
+        
+        nstep_up1 = int((max_p - start_p)/step_size)+1
+        max_p = start_p + step_size*(nstep_up1-1)
+        nstep_down1 = int((max_p - min_p)/step_size)
+        min_p = max_p - step_size*(nstep_down1)
+        nstep_up2 = - nstep_up1 + nstep_down1+1
+        
+        # print(max_p, min_p, nstep_up2)
+        # nstep_down = 1
+        # nstep_up2 = 1
+        ramp.perform_one_ramp_one_controller(
+            start_p=start_p, end_p=max_p, nb_steps=nstep_up1, plateau_time=plateau_time
+        )
+        ramp.perform_one_ramp_one_controller(
+            start_p=max_p-step_size, end_p=min_p, nb_steps=nstep_down1, plateau_time=plateau_time
+        )
+        ramp.perform_one_ramp_one_controller(
+            start_p=min_p + step_size, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
+        )
+        ramp.create_json_file()
+        print(ramp.inputs_list)
+        ramp.plot_intputs()
 
-def experiment(pressure_pump,pressure_rates,runtime,Course_Flag=True):
-    assert pressure_pump is not None, "Pressure meter not connected"
+# Coarse Parameters
+coarse_parameters = {
+    "Nb_controllers": 1,
+    "IDstring": '3-16',
+    "Lstring": '30',
+    "check_valve_type": 'cv3',
+    "plateau_time": 30,
+    'Pstart': 0,
+    "Pmax":700,
+    "Pmin": -int(Pmax/4),
+    "step_size": int((Pmax-Pmin)/20.),
+    "file_string": './node_tube_{:s}cm_ID_{:s}_{:s}_node_coarse/input_ramp'.format(Lstring, IDstring, check_valve_type)
+}
 
-    for pressure in pressure_rates:
-        
-        pressure_pump.inject(syringe, fl, runtime,"ul/min")
-        
-        if SL1500_flag:
-            flow_meter.Continuous_Measure_and_Save(duration_s=runtime,  plot=False, flow_rate_string=flow_rate)
-        else:
-            flow_meter.get_continuous_flowrate(duration_s=runtime, interval=0.1, flow_rate_string=flow_rate,save_data=True)
-        
-        pump.stop()
-        time.sleep(1) # Interval between experiments
+# Fine Parameters
+fine_parameters = {
+    "Nb_controllers": 1,
+    "IDstring": "3-16",
+    "Lstring": '30',
+    "check_valve_type": "cv3",
+    "plateau_time": 30,
+    'Pstart': 0,
+    "Pmax":40,
+    "Pmin": -40,
+    "step_size": int((Pmax-Pmin)/20.),
+    "file_string": './node_tube_{:s}cm_ID_{:s}_{:s}_node_coarse/input_ramp'.format(Lstring, IDstring,check_valve_type)
+}
+
+# Accessing values using keys
+# print(my_dict["name"])           # Output: John
+# coarse_parameters[IDstring]
 
 if __name__=="__main__":
-    nb_controllers = 1
-
-    # Experiment Nme 
-    connection_start = 'node-tube'
-    tube_length = '-30cm'
-    inner_diameter = '-1-8in'
-    connection_middle = '-cv3'
-    connection_end = 'node'
-    exp_name = connection_start + tube_length + inner_diameter + connection_middle + connection_end
     
-    pp_pressure = PP_Pressure(nb_controllers,exp_name)
-    experiment(pp_pressure,pressure_rates,runtime,Course_Flag=True)
+    experiment_single_cycle(coarse_parameters) 
+    # experiment_single_cycle(fine_parameters) 
