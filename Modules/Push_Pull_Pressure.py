@@ -3,6 +3,7 @@ import sys
 import json
 import matplotlib.pyplot as plt
 import time
+import os
 
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -162,6 +163,11 @@ class PP_Pressure:
         print("Ramp finished !")
 
     def create_json_file(self) -> None:
+        # Create the directory if it doesn't exist
+        directory = os.path.dirname(self.exp_name)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         with open(f'{self.exp_name}.json', 'w') as fp:
             protocol = {
                 "name": self.exp_name,
@@ -188,57 +194,38 @@ class PP_Pressure:
         plt.tight_layout()
         fig.savefig(f"{self.exp_name}_figure.png")
         plt.show()
-
         
-def experiment_cycle_single_controller(filename="20230208_quick",
-                            start_p=0, max_p=300, min_p=-100, step_size=25,
-                            plateau_time=30):
-    """Time : 12*30s = 6min"""
-    ramp = PP_Pressure(nb_controllers=1, exp_name=filename)
-    with Pressure_Controller(nb_controllers=ramp.nb_controllers):
-        
-        nstep_up1 = int((max_p - start_p)/step_size)+1
-        max_p = start_p + step_size*(nstep_up1-1)
-        nstep_down1 = int((max_p - min_p)/step_size)
-        min_p = max_p - step_size*(nstep_down1)
-        nstep_up2 = - nstep_up1 + nstep_down1+1
-        
-        # print(max_p, min_p, nstep_up2)
-        # nstep_down = 1
-        # nstep_up2 = 1
-        ramp.perform_one_ramp_one_controller(
-            start_p=start_p, end_p=max_p, nb_steps=nstep_up1, plateau_time=plateau_time
-        )
-        ramp.perform_one_ramp_one_controller(
-            start_p=max_p-step_size, end_p=min_p, nb_steps=nstep_down1, plateau_time=plateau_time
-        )
-        ramp.perform_one_ramp_one_controller(
-            start_p=min_p + step_size, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
-        )
-        ramp.create_json_file()
-        print(ramp.inputs_list)
-        ramp.plot_intputs()
+    def experiment_single_cycle(self,dict):
+        nb_controllers = dict["nb_controllers"]
+        file_string = dict["file_string"]
+        plateau_time = dict["plateau_time"]
+        max_p = dict["Pmax"]
+        min_p = dict["Pmin"]
+        start_p = dict["Pstart"]
+        step_size = dict["step_size"]
 
+        ramp = PP_Pressure(nb_controllers,file_string)
+        with Pressure_Controller(nb_controllers=ramp.nb_controllers):
+            
+            nstep_up1 = int((max_p - start_p)/step_size)+1
+            max_p = start_p + step_size*(nstep_up1-1)
+            nstep_down1 = int((max_p - min_p)/step_size)
+            min_p = max_p - step_size*(nstep_down1)
+            nstep_up2 = - nstep_up1 + nstep_down1+1
+            
+            # print(max_p, min_p, nstep_up2)
+            # nstep_down = 1
+            # nstep_up2 = 1
+            ramp.perform_one_ramp_one_controller(
+                start_p=start_p, end_p=max_p, nb_steps=nstep_up1, plateau_time=plateau_time
+            )
+            ramp.perform_one_ramp_one_controller(
+                start_p=max_p-step_size, end_p=min_p, nb_steps=nstep_down1, plateau_time=plateau_time
+            )
+            ramp.perform_one_ramp_one_controller(
+                start_p=min_p + step_size, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
+            )
+            ramp.create_json_file()
+            print(ramp.inputs_list)
+            ramp.plot_intputs()
 
-
-if __name__ == "__main__":
-
-    IDstring = '3-16'
-    Lstring = '30'
-    plateau_time = 30
-    Pmax = 700
-    Pmin = -int(Pmax/4)
-    step_size = int((Pmax-Pmin)/20.)
-    filestring = r'./node_tube_{:s}cm_ID_{:s}_checkvalve_node/input_ramp'.format(Lstring, IDstring)
-    
-    Pmin = -40
-    Pmax = 40
-    step_size = int((Pmax-Pmin)/20.)
-    filestring = r'./node_tube_{:s}cm_ID_{:s}_checkvalve_node_fine/input_ramp'.format(Lstring, IDstring)
-    
-    experiment_cycle_single_controller(r'./test/input_ramp',
-                                        min_p=0,
-                                        max_p=500,
-                                        step_size=100,
-                                        plateau_time=2.2)
-    

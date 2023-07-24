@@ -396,19 +396,23 @@ class SLS_1500Device(ShdlcDeviceBase):
         ys = df['mL/min']
         return xs, ys
     
-    def Continuous_Measure_and_Save(self, duration_s, flow_rate_string=None, plot=None ):
+    def Continuous_Measure_and_Save(self, duration_s, set_flow_rate_string=None):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
-        print("Measurement and Save started %ds " %duration_s)
+        print("Flow Measurement Started %ds " %duration_s)
 
         # self.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
         retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
         if MEASURING_INTERVAL*retrievals<duration_s:
             retrievals+=1
-        flow_rate_raw = float(flow_rate_string)
-        flow_rate_string = "{:.2f}".format(flow_rate_raw)
-        experiment_name = "sls_flow_rate_forward_"+flow_rate_string+"_ul_min"
-        filename=experiment_name+'.csv'
+        if set_flow_rate_string is not None:
+            flow_rate_raw = float(set_flow_rate_string)
+            flow_rate_string = "{:.2f}".format(flow_rate_raw)
+            experiment_name = "sls_flow_rate_forward_"+flow_rate_string+"_ul_min"
+            filename=experiment_name+'.csv'
+        else:
+            experiment_name = "sls_flow_rate_forward_ms_mL_min"
+            filename=experiment_name+'.csv'
 
 
         df = pd.DataFrame(columns=['ms','mL/min']) # create an empty dataframe

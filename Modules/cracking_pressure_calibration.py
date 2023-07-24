@@ -1,77 +1,64 @@
-# Need the salea to record the pressures and then to plot them with the corresponding prssurs
-# take into account the downsample ratio and the datasheet of the pressure sensor (play to see if you can reduce the sampling )
-# Have a file saving strucutre to how the experiments will be conducted
-# Maybe talk to Anne about the specific pickle structures for that
-
-# Need also to control the fluigent to get the corresponding pressure on the pressure ramp 
 from Push_Pull_Pressure import *
+from SLS_1500 import *
+from Saleae import *
+from datetime import datetime
 
-def experiment_single_cycle(dict):
-    nb_controllers = dict["nb_controllers"]
-    file_string = dict["file_string"]
-    plateau_time = dict["plateau_time"]
-    max_p = dict["Pmax"]
-    min_p = dict["Pmin"]
-    step_size = dict["step_size"]
+Lstring = '30cm'
+IDstring = '3-16'
+check_valve_type = 'cv3'
 
-    ramp = PP_Pressure(nb_controllers,file_string)
-    with Pressure_Controller(nb_controllers=ramp.nb_controllers):
-        
-        nstep_up1 = int((max_p - start_p)/step_size)+1
-        max_p = start_p + step_size*(nstep_up1-1)
-        nstep_down1 = int((max_p - min_p)/step_size)
-        min_p = max_p - step_size*(nstep_down1)
-        nstep_up2 = - nstep_up1 + nstep_down1+1
-        
-        # print(max_p, min_p, nstep_up2)
-        # nstep_down = 1
-        # nstep_up2 = 1
-        ramp.perform_one_ramp_one_controller(
-            start_p=start_p, end_p=max_p, nb_steps=nstep_up1, plateau_time=plateau_time
-        )
-        ramp.perform_one_ramp_one_controller(
-            start_p=max_p-step_size, end_p=min_p, nb_steps=nstep_down1, plateau_time=plateau_time
-        )
-        ramp.perform_one_ramp_one_controller(
-            start_p=min_p + step_size, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
-        )
-        ramp.create_json_file()
-        print(ramp.inputs_list)
-        ramp.plot_intputs()
+# Pressure Coarse Parameters
+Pmax = 700
+Pmin = -int(Pmax / 4)
+step_size = int((Pmax - Pmin) / 20.)
+plateau_time = 2
+total_seconds = plateau_time* step_size
+total_mins = total_seconds // 60
+print("Total Duration: {}mins {}s".format(total_mins, total_seconds % 60))
 
-# Coarse Parameters
 coarse_parameters = {
-    "Nb_controllers": 1,
-    "IDstring": '3-16',
-    "Lstring": '30',
-    "check_valve_type": 'cv3',
-    "plateau_time": 30,
+    "nb_controllers": 1,
+    "IDstring": IDstring,
+    "Lstring": Lstring,
+    "check_valve_type": check_valve_type,
+    "plateau_time": plateau_time,
     'Pstart': 0,
-    "Pmax":700,
-    "Pmin": -int(Pmax/4),
-    "step_size": int((Pmax-Pmin)/20.),
-    "file_string": './node_tube_{:s}cm_ID_{:s}_{:s}_node_coarse/input_ramp'.format(Lstring, IDstring, check_valve_type)
+    "Pmax": Pmax,
+    "Pmin": Pmin,
+    "step_size": step_size,
+    "file_string": './node_tube_{:s}_ID_{:s}_{:s}_node_coarse/input_ramp'.format(Lstring, IDstring, check_valve_type)
 }
 
-# Fine Parameters
+# Pressure Fine Parameters
 fine_parameters = {
-    "Nb_controllers": 1,
-    "IDstring": "3-16",
-    "Lstring": '30',
-    "check_valve_type": "cv3",
+    "nb_controllers": 1,
+    "IDstring": IDstring,
+    "Lstring": Lstring,
+    "check_valve_type": check_valve_type,
     "plateau_time": 30,
     'Pstart': 0,
     "Pmax":40,
     "Pmin": -40,
     "step_size": int((Pmax-Pmin)/20.),
-    "file_string": './node_tube_{:s}cm_ID_{:s}_{:s}_node_coarse/input_ramp'.format(Lstring, IDstring,check_valve_type)
+    "file_string": './node_tube_{:s}_ID_{:s}_{:s}_node_fine/input_ramp'.format(Lstring, IDstring,check_valve_type)
 }
 
-# Accessing values using keys
-# print(my_dict["name"])           # Output: John
-# coarse_parameters[IDstring]
 
 if __name__=="__main__":
+
+    # pressure_control = PP_Pressure(coarse_parameters["nb_controllers"], coarse_parameters["file_string"])
+    # pressure_control.experiment_single_cycle(coarse_parameters)
+
+    # Record the Flow PROBLEM IS THAT IT POOLS THROUGH THIS
+    # port = ShdlcSerialPort(port='COM3', baudrate=115200)  # Create a serial port object for communication on port 'COM3' with baudrate 115200
+    # flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)  # Create a flow meter device using the ShdlcConnection and the port,
+    # flow_meter.Continuous_Measure_and_Save(duration_s=total_seconds, set_flow_rate_string=None,)
+
+    # Record Voltages
+    # Create an instance of the LogicCapture class
+    # logic_capture = LogicCapture(duration_seconds=total_seconds)
+    # logic_capture = LogicCapture(5)
+    # output_dir = os.path.join(os.getcwd(), 'output_voltages')
+    # logic_capture.start_capture(output_dir)
+
     
-    experiment_single_cycle(coarse_parameters) 
-    # experiment_single_cycle(fine_parameters) 
