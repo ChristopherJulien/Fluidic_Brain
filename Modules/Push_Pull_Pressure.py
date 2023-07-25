@@ -18,6 +18,14 @@ p_min_1 = ContextVar('p_min_1')
 p_max_1 = ContextVar('p_max_1')
 
 
+# Push_Pull_Pressure.py
+def process_push_pull_pressure(dic_parameters):
+    # Add the functionality from Push_Pull_Pressure.py here
+    print("Push Pull processing started")
+    pressure_control = PP_Pressure(dic_parameters["nb_controllers"], dic_parameters["exp_name"])
+    pressure_control.experiment_single_cycle(dic_parameters)
+    
+
 @contextmanager
 def Pressure_Controller(nb_controllers: int=1):
     """Context manager to setup the experiment"""
@@ -168,7 +176,7 @@ class PP_Pressure:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        with open(f'{self.exp_name}.json', 'w') as fp:
+        with open(f'{self.exp_name}ramp.json', 'w') as fp:
             protocol = {
                 "name": self.exp_name,
                 "times": self.times_list,
@@ -197,7 +205,7 @@ class PP_Pressure:
         
     def experiment_single_cycle(self,dict):
         nb_controllers = dict["nb_controllers"]
-        file_string = dict["file_string"]
+        file_string = dict["exp_name"]
         plateau_time = dict["plateau_time"]
         max_p = dict["Pmax"]
         min_p = dict["Pmin"]
@@ -227,5 +235,56 @@ class PP_Pressure:
             )
             ramp.create_json_file()
             print(ramp.inputs_list)
-            ramp.plot_intputs()
+            # ramp.plot_intputs()
 
+if __name__ == "__main__":
+    print('MultiScripting Push_Pull_Pressure.py')
+    Lstring = '30cm'
+    IDstring = '3-32'
+    check_valve_type = 'tube'
+    # Pressure Coarse Parameters
+    Pmax = 300
+    Pmin = -int(Pmax / 4)
+    Pstart = 0
+    num_steps = 20
+    step_size = int((Pmax - Pmin) / num_steps)
+    plateau_time = 30
+    h_init_cm = '8.3cm'
+    vl_init   = '1000mL'
+
+
+    exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node-h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
+    calibration_folder = exp_folder+r'/calibration_'
+    voltages_path = r'output/analog_voltages'
+    pressure_path = r'output/analog_pressures'
+
+    coarse_parameters = {
+        "nb_controllers": 1,
+        "IDstring": IDstring,
+        "Lstring": Lstring,
+        "check_valve_type": check_valve_type,
+        "plateau_time": plateau_time,
+        'Pstart': Pstart,
+        "Pmax": Pmax,
+        "Pmin": Pmin,
+        'h_init': h_init_cm,
+        'vl_init': vl_init,
+        "step_size": step_size,
+        "exp_name": exp_folder,
+    }
+
+    nstep_up1 = int((Pmax - Pstart)/step_size)+1
+    max_p = Pstart + step_size*(nstep_up1-1)
+    nstep_down1 = int((max_p - Pmin)/step_size)
+    min_p = max_p - step_size*(nstep_down1)
+    nstep_up2 = - nstep_up1 + nstep_down1+1
+
+    total_seconds = plateau_time* (nstep_up1 + nstep_down1 + nstep_up2)
+    total_mins = total_seconds // 60
+    calibration_time_s = 3
+
+    process_push_pull_pressure(coarse_parameters)
+
+    json_file = os.path.join(exp_folder,"exp_params.json")
+    with open(json_file, 'w') as fp:
+        json.dump(coarse_parameters, fp)

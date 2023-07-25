@@ -217,7 +217,7 @@ class Plot:
         plt.tight_layout()
         plt.show()
 
-    def flow_rate_over_time(self):
+    def flow_rate_over_time(self,search_pattern, file_pattern,):
         assert self.SLS1500_flag is not None, "SLS1500_flag must be set before calling this function"
 
         print("Plotting Flow Rate Over Time")
@@ -273,6 +273,146 @@ class Plot:
         # plt.savefig(save_path)
         # print("Plot saved: {}".format(save_path))
 
+    def channels_vs_time(self,folder_path,channel_dict):
+        if channel_dict is None:
+             channel_dict = {
+                        "Time [s]" : ('Time [s]','none', 's', 'none'),
+                        "Channel 4": ('Channel 4','yellow', '25kPa', 0.018),
+                        "Channel 5": ('Channel 5','green', '2kPa', 0.2),
+                        "Channel 6": ('Channel 6','blue', '7kPa', 0.057),
+                        "Channel 7": ('Channel 7','purple','V_source', 5.0)
+        }
+        try:
+            # Load data from CSV using pandas
+            filepath = folder_path + r'\output\analog_voltages\analog.csv'
+            df = pd.read_csv(filepath)
+
+            # Extract columns for time and channels
+            time      =  df[channel_dict['Time [s]'][0]]  
+            channel_4 =  df[channel_dict['Channel 4'][0]]
+            channel_5 =  df[channel_dict['Channel 5'][0]]
+            channel_6 =  df[channel_dict['Channel 6'][0]]
+            channel_7 =  df[channel_dict['Channel 7'][0]]
+
+            # Create the plot
+            plt.figure(figsize=(10, 6))
+            plt.plot(time, channel_4, label=channel_dict['Channel 4'][2], color=channel_dict['Channel 4'][1])
+            plt.plot(time, channel_5, label=channel_dict['Channel 5'][2], color=channel_dict['Channel 5'][1])
+            plt.plot(time, channel_6, label=channel_dict['Channel 6'][2], color=channel_dict['Channel 6'][1])
+            plt.plot(time, channel_7, label=channel_dict['Channel 7'][2], color=channel_dict['Channel 7'][1])
+
+            plt.autoscale(axis='y')
+            plt.xlabel('Time [s]', fontsize=20)
+            plt.ylabel('Voltage [V]', fontsize=20)
+            plt.title('Channel Voltage vs Time')
+            plt.tick_params(axis='both', which='major', labelsize=16)
+
+            # Customize the spines
+            ax = plt.gca()
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_linewidth(0.5)  # Adjust the linewidth of the left spine
+            ax.spines['bottom'].set_linewidth(0.5)  # Adjust the linewidth of the bottom spine
+
+            # Add gridlines to the plot
+            plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+            # Customize the legend
+            plt.rcParams['figure.autolayout'] = True
+            plt.rcParams['font.size'] = 9
+            plt.rcParams['legend.edgecolor'] = '1'
+            plt.legend(fontsize=12, frameon=False)
+
+            # Show the plot
+            plt.show()
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+    def create_pressure_vs_time(self, folder_path, channel_dict):
+        analog_path = folder_path + r'\output\analog_voltages\analog.csv'
+        os.makedirs(folder_path + r'\output\analog_pressure', exist_ok=True)
+        pressure_path = folder_path + r'\output\analog_pressure\pressures.csv'
+
+        if channel_dict is None:
+            channel_dict = {
+                        "Time [s]" : ('Time [s]','none', 's', 'none'),
+                        "Channel 4": ('Channel 4','yellow', '25kPa', 0.018),
+                        "Channel 5": ('Channel 5','green', '2kPa', 0.2),
+                        "Channel 6": ('Channel 6','blue', '7kPa', 0.057),
+                        "Channel 7": ('Channel 7','purple','Source', 5.0)
+            }
+
+        # # Read the original CSV file
+        df = pd.read_csv(analog_path)
+
+        # Change column headers to our desired names
+        df.columns = [channel_dict["Time [s]"][2], 
+                      channel_dict["Channel 4"][2], 
+                      channel_dict["Channel 5"][2], 
+                      channel_dict["Channel 6"][2], 
+                      channel_dict["Channel 7"][2]]
+        df.to_csv(pressure_path, index=False)
+
+        # Apply formula to convert voltage to pressure
+        df[channel_dict["Channel 4"][2]] = (df[channel_dict["Channel 4"][2]] / df[channel_dict["Channel 7"][2]] - 0.5) / channel_dict["Channel 4"][3] * 10
+        df[channel_dict["Channel 5"][2]] = (df[channel_dict["Channel 5"][2]] / df[channel_dict["Channel 7"][2]] - 0.5) / channel_dict["Channel 5"][3] * 10
+        df[channel_dict["Channel 6"][2]] = (df[channel_dict["Channel 6"][2]] / df[channel_dict["Channel 7"][2]] - 0.5) / channel_dict["Channel 6"][3] * 10
+
+        # Save the modified DataFrame to the new CSV file
+        df.to_csv(pressure_path, index=False)
+        print(f"New pressures.csv created successfully.")
+
+    def pressure_vs_time(self, folder_path):
+        pressure_path = folder_path + r'\output\analog_pressure\pressures.csv'
+        df = pd.read_csv(pressure_path)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(df['s'], df['25kPa'], label='25kPa')
+        plt.plot(df['s'], df['2kPa'], label='2kPa')
+        plt.plot(df['s'], df['7kPa'], label='7kPa')
+
+        plt.autoscale(axis='y')
+        plt.xlabel('Time [s]', fontsize=20)
+        plt.ylabel('Pressure [kPa]', fontsize=20)
+        plt.title('Pressure vs Time')
+        plt.tick_params(axis='both', which='major', labelsize=16)
+
+        # Customize the spines
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_linewidth(0.5)
+        plt.show()
+    
+    def sls_flow_measurements(self,folder_path,save=None):
+        flow_path = folder_path + r'\sls_flow_measurments.csv'
+        # flow_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\testsls_flow_measurments.csv'
+        print("Plotting Flow Rate Over Time")
+        fig, ax = plt.subplots(1, 1, figsize=(16, 9))  # Set the figsize to the screen aspect ratio
+
+        df = pd.read_csv(flow_path)
+        print(df)
+
+        mL_min = df['mL/min'].tolist() 
+        s = df['ms'].tolist()    
+
+        ax.plot(s, mL_min, label='q measured mL/min')
+        ax.autoscale(axis='y')
+        ax.legend(fontsize=8, frameon=False)
+        ax.set_xlabel("Time [s]", fontsize=20)
+        ax.set_ylabel("Flow [mL/min]", fontsize=20)
+        ax.tick_params(axis='both', which='major', labelsize=16)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        plt.legend(fontsize=12, frameon=False)  # Decrease the fontsize value to make the legend smaller
+
+        plt.show()
+
 
 # def volt_to_mbar(sensor, volt_signal, volt_source):
 #     '''
@@ -287,14 +427,24 @@ class Plot:
 #     pressure [volt_signal < 0.5] = np.nan
 #     pressure [volt_signal > 4.5] = np.nan
 #     return pressure
-        
-if __name__=="__main__":
-    # plot = Plot(SLS1500_flag=True)
-    # plot.q_vs_qs_and_relative_error()
-    # plot.flow_rate_over_time()
     
+if __name__=="__main__":
     plot = Plot()
-    plot.all_q_vs_qs_case(SLS, GLYCEROL)
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Cracking_Pressure_Data\node_tube_30cm_ID_3-16_none_node_coarse'
+ 
+    channel_dict = {
+                        "Time [s]" : ('Time [s]','none', 's', 'none'),
+                        "Channel 4": ('Channel 4','yellow', '25kPa', 0.018),
+                        "Channel 5": ('Channel 5','green', '2kPa', 0.2),
+                        "Channel 6": ('Channel 6','blue', '7kPa', 0.057),
+                        "Channel 7": ('Channel 7','purple','Source', 5.0)
+        }
+    # plot.channels_vs_time(folder_path, channel_dict)
+    # plot.create_pressure_vs_time(folder_path, channel_dict)
+    # plot.pressure_vs_time(folder_path)
+    plot.sls_flow_measurements(folder_path)
+    
+    
     
     
     

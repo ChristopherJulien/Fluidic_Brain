@@ -13,6 +13,14 @@ plt.style.use('fivethirtyeight')
 MEASURING_INTERVAL = 10 # seconds
 _100ms_HEX =b"\x00\x64"
 SCALE_FACTOR = 500
+# SLS_1500.py
+def process_sls_1500(total_seconds, file_name):
+    # Add the functionality from SLS_1500.py here
+    print("SLS_1500 processing started")
+    port = ShdlcSerialPort(port='COM3', baudrate=115200)  # Create a serial port object for communication on port 'COM3' with baudrate 115200
+    flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)  # Create a flow meter device using the ShdlcConnection and the port,
+    flow_meter.Continuous_Measure_and_Save(duration_s=total_seconds,filename=file_name, set_flow_rate_string=None,)
+    
 
 # Sensor Measurement Commands
 class Get_Version(ShdlcCommand):
@@ -396,13 +404,13 @@ class SLS_1500Device(ShdlcDeviceBase):
         ys = df['mL/min']
         return xs, ys
     
-    def Continuous_Measure_and_Save(self, duration_s, set_flow_rate_string=None):
+    def Continuous_Measure_and_Save(self, duration_s, filename, set_flow_rate_string=None):
         # Measure and save the data for the specified duration of a buffer size of 100 measurements
         print("Flow Measurement Started %ds " %duration_s)
 
         # self.Sensor_Command_Settings(resolution=b"\x10", calib_field=b"\x00", set_linearization=True) # 16 bit resolution, calib field 0, linearization on
 
-        retrievals = duration_s //MEASURING_INTERVAL #Duration divided by buffer fill duration (10ms)
+        retrievals = np.ceil(duration_s /MEASURING_INTERVAL) #Duration divided by buffer fill duration (10ms)
         if MEASURING_INTERVAL*retrievals<duration_s:
             retrievals+=1
         if set_flow_rate_string is not None:
@@ -411,38 +419,48 @@ class SLS_1500Device(ShdlcDeviceBase):
             experiment_name = "sls_flow_rate_forward_"+flow_rate_string+"_ul_min"
             filename=experiment_name+'.csv'
         else:
-            experiment_name = "sls_flow_rate_forward_ms_mL_min"
-            filename=experiment_name+'.csv'
+            experiment_name = filename
+            filename=experiment_name+'sls_flow_measurments.csv'
+            print("Filename: ", filename)
 
 
         df = pd.DataFrame(columns=['ms','mL/min']) # create an empty dataframe
+        time_array = None
+        q_array = None
         i = 0
         start_time = time.time()
         while i<retrievals:
             print("Retrieval %d" %i)
             self.Start_Continuous_Measurement()
-            last_ms_value = time.time() - start_time
+            last_s_value = time.time() - start_time
 
             sleep(MEASURING_INTERVAL) #secondes
-            elapsed_time = time.time() - start_time
-            time_steps = elapsed_time / 100 # number of measurements per second
+            elapsed_time_s = time.time() - start_time-last_s_value
+            time_steps_s = elapsed_time_s / 100 # number of measurements per second
             if i == 0:
-                df['ms'] = pd.DataFrame(np.arange(start=time_steps*1000, stop=time_steps*100*1000+1, step=time_steps*1000)) # Fill the dataframe with the time
-                df['mL/min'] = pd.DataFrame(self.Get_Measurement_Buffer())/SCALE_FACTOR # Fill the dataframe with the buffer
-                df.to_csv(filename, index=False, header=True, mode='a') # Write the buffer to csv 
+                time_array =np.linspace(0,elapsed_time_s,100)
+                q_array = np.array(self.Get_Measurement_Buffer())/SCALE_FACTOR
+                # df['ms'] = pd.DataFrame(np.linspace(0,elapsed_time_s,100)*1000) # Fill the dataframe with the time
+                # df['mL/min'] = pd.DataFrame(self.Get_Measurement_Buffer())/SCALE_FACTOR # Fill the dataframe with the buffer
+                # df.to_csv(filename, index=False, header=True, mode='a') # Write the buffer to csv 
             else:
-                print("Last ms value")
-                print(last_ms_value)
-                df['ms'] = pd.DataFrame(np.arange(start=(last_ms_value+time_steps)*1000, stop= (last_ms_value+time_steps)*100*1000+1, step=time_steps*1000)) # Overwrite new dataframe with the time
-                df['mL/min'] = pd.DataFrame(self.Get_Measurement_Buffer())/SCALE_FACTOR # Overwrite new dataframe with the buffer
-                    
-                df.to_csv(filename, index=False, header=False, mode='a')
+                print("Last s value: ", last_s_value)
+                print("Elapsed time: ", elapsed_time_s)
+                time_step = np.linspace(last_s_value,last_s_value+elapsed_time_s,100)
+                time_array= np.hstack((time_array,time_step))
+                q_array_step = np.array(self.Get_Measurement_Buffer())/SCALE_FACTOR
+                q_array = np.hstack((q_array,q_array_step))
+                # print("Last ms value")
+                # df['ms'] = pd.DataFrame(np.linspace(last_s_value,last_s_value+elapsed_time_s,100)*1000) # Fill the dataframe with the time
+                # df['mL/min'] = pd.DataFrame(self.Get_Measurement_Buffer())/SCALE_FACTOR # Fill the dataframe with the buffer
+                # df.to_csv(filename, index=False, header=False, mode='a') # Write the buffer to csv 
             self.Stop_Continuous_measurement() # Stopped the continuous measurement
-            # print("Time elapsed: %.6f seconds" % (time.time() - start_time))
+            
             i+=1
             sleep(0.1)
-        
-
+        # df['ms'] = pd.DataFrame(time_array)# Fill the dataframe with the time
+        # df['mL/min'] = pd.DataFrame(q_array) # Fill the dataframe with the buffer
+        np.savetxt(filename, np.c_[time_array,q_array], delimiter=',', header='s,mL/min', comments='', fmt='%f')
     def Apply_Flow_Scale_Factor(self, filename):
         df = pd.read_csv(filename)
         column_name = 'mL/min'
@@ -508,3 +526,50 @@ class SLS_1500Device(ShdlcDeviceBase):
     # Multiple Continuous Measurement with Buffer
     # fs.Continuous_Measure_and_Save(duration_s=15, plot=False, filename='output') # 100s, 100ms buffer interval, plot=True
 
+if __name__ == "__main__":
+    print("MultiScripting SLS.py")
+    Lstring = '30cm'
+    IDstring = '3-32'
+    check_valve_type = 'tube'
+    # Pressure Coarse Parameters
+    Pmax = 300
+    Pmin = -int(Pmax / 4)
+    Pstart = 0
+    num_steps = 20
+    step_size = int((Pmax - Pmin) / num_steps)
+    plateau_time = 30
+    h_init_cm = '8.3cm'
+    vl_init   = '1000mL'
+
+
+    exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node-h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
+    calibration_folder = exp_folder+r'/calibration_'
+    voltages_path = r'output/analog_voltages'
+    pressure_path = r'output/analog_pressures'
+
+    coarse_parameters = {
+        "nb_controllers": 1,
+        "IDstring": IDstring,
+        "Lstring": Lstring,
+        "check_valve_type": check_valve_type,
+        "plateau_time": plateau_time,
+        'Pstart': Pstart,
+        "Pmax": Pmax,
+        "Pmin": Pmin,
+        'h_init': h_init_cm,
+        'vl_init': vl_init,
+        "step_size": step_size,
+        "exp_name": exp_folder,
+    }
+
+    nstep_up1 = int((Pmax - Pstart)/step_size)+1
+    max_p = Pstart + step_size*(nstep_up1-1)
+    nstep_down1 = int((max_p - Pmin)/step_size)
+    min_p = max_p - step_size*(nstep_down1)
+    nstep_up2 = - nstep_up1 + nstep_down1+1
+
+    total_seconds = plateau_time* (nstep_up1 + nstep_down1 + nstep_up2)
+    total_mins = total_seconds // 60
+    
+    print('Time:{:d}mins, {:d}s'.format(int(total_mins), int(total_seconds % 60)))
+    process_sls_1500(total_seconds=total_seconds,file_name=exp_folder)
