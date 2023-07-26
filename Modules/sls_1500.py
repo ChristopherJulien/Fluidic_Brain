@@ -8,18 +8,23 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import sys
+import json
+import os
 plt.style.use('fivethirtyeight')
 
 MEASURING_INTERVAL = 10 # seconds
 _100ms_HEX =b"\x00\x64"
 SCALE_FACTOR = 500
 # SLS_1500.py
-def process_sls_1500(total_seconds, file_name):
+def process_sls_1500(total_seconds,folder_name, file_name):
     # Add the functionality from SLS_1500.py here
     print("SLS_1500 processing started")
+    flow_subfolder_path = os.path.join(folder_name, file_name)
+    os.mkdir(flow_subfolder_path)
     port = ShdlcSerialPort(port='COM3', baudrate=115200)  # Create a serial port object for communication on port 'COM3' with baudrate 115200
     flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)  # Create a flow meter device using the ShdlcConnection and the port,
-    flow_meter.Continuous_Measure_and_Save(duration_s=total_seconds,filename=file_name, set_flow_rate_string=None,)
+    flow_meter.Continuous_Measure_and_Save(duration_s=total_seconds,filename=flow_subfolder_path, set_flow_rate_string=None,)
     
 
 # Sensor Measurement Commands
@@ -420,7 +425,7 @@ class SLS_1500Device(ShdlcDeviceBase):
             filename=experiment_name+'.csv'
         else:
             experiment_name = filename
-            filename=experiment_name+'sls_flow_measurments.csv'
+            filename=experiment_name+'/sls_flow_measurements.csv'
             print("Filename: ", filename)
 
 
@@ -527,49 +532,9 @@ class SLS_1500Device(ShdlcDeviceBase):
     # fs.Continuous_Measure_and_Save(duration_s=15, plot=False, filename='output') # 100s, 100ms buffer interval, plot=True
 
 if __name__ == "__main__":
-    print("MultiScripting SLS.py")
-    Lstring = '30cm'
-    IDstring = '3-32'
-    check_valve_type = 'tube'
-    # Pressure Coarse Parameters
-    Pmax = 300
-    Pmin = -int(Pmax / 4)
-    Pstart = 0
-    num_steps = 20
-    step_size = int((Pmax - Pmin) / num_steps)
-    plateau_time = 30
-    h_init_cm = '8.3cm'
-    vl_init   = '1000mL'
-
-
-    exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node-h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
-    calibration_folder = exp_folder+r'/calibration_'
-    voltages_path = r'output/analog_voltages'
-    pressure_path = r'output/analog_pressures'
-
-    coarse_parameters = {
-        "nb_controllers": 1,
-        "IDstring": IDstring,
-        "Lstring": Lstring,
-        "check_valve_type": check_valve_type,
-        "plateau_time": plateau_time,
-        'Pstart': Pstart,
-        "Pmax": Pmax,
-        "Pmin": Pmin,
-        'h_init': h_init_cm,
-        'vl_init': vl_init,
-        "step_size": step_size,
-        "exp_name": exp_folder,
-    }
-
-    nstep_up1 = int((Pmax - Pstart)/step_size)+1
-    max_p = Pstart + step_size*(nstep_up1-1)
-    nstep_down1 = int((max_p - Pmin)/step_size)
-    min_p = max_p - step_size*(nstep_down1)
-    nstep_up2 = - nstep_up1 + nstep_down1+1
-
-    total_seconds = plateau_time* (nstep_up1 + nstep_down1 + nstep_up2)
-    total_mins = total_seconds // 60
-    
-    print('Time:{:d}mins, {:d}s'.format(int(total_mins), int(total_seconds % 60)))
-    process_sls_1500(total_seconds=total_seconds,file_name=exp_folder)
+    print("MultiScripting SLS.py")    
+    param_dict = json.loads(sys.argv[1]) # Parse the JSON string back to a dictionary
+    master_folder_path = param_dict['master_folder_path']
+    flow_subfolder = param_dict['flow_subfolder']
+    total_seconds = param_dict['total_seconds']
+    process_sls_1500(total_seconds, master_folder_path,flow_subfolder)

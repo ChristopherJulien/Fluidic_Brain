@@ -387,7 +387,6 @@ class Plot:
     
     def sls_flow_measurements(self,folder_path,save=None):
         flow_path = folder_path + r'\sls_flow_measurments.csv'
-        # flow_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\testsls_flow_measurments.csv'
         print("Plotting Flow Rate Over Time")
         fig, ax = plt.subplots(1, 1, figsize=(16, 9))  # Set the figsize to the screen aspect ratio
 
@@ -395,7 +394,7 @@ class Plot:
         print(df)
 
         mL_min = df['mL/min'].tolist() 
-        s = df['ms'].tolist()    
+        s = df['s'].tolist()    
 
         ax.plot(s, mL_min, label='q measured mL/min')
         ax.autoscale(axis='y')
@@ -430,7 +429,7 @@ class Plot:
     
 if __name__=="__main__":
     plot = Plot()
-    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Cracking_Pressure_Data\node_tube_30cm_ID_3-16_none_node_coarse'
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\node_tube_30cm_ID_3-32_tube_node-h_init8.3cm_vl_init1000mL'
  
     channel_dict = {
                         "Time [s]" : ('Time [s]','none', 's', 'none'),

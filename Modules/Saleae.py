@@ -1,14 +1,15 @@
 import os
 import csv
 import subprocess
+import sys
+import json
 from saleae import automation
 
-def process_saleae(exp_folder, voltages_path, pressure_path, total_seconds):
+def process_saleae(folder_name, file_name, total_seconds):
     print("Saleae processing started")
     logic_capture = LogicCapture(duration_seconds=total_seconds)
-    analog_voltages = os.path.join(os.getcwd(), exp_folder + voltages_path)
-    logic_capture.start_capture(analog_voltages)
-    # analog_pressures = os.path.join(os.getcwd(), exp_folder + pressure_path)
+    analog_voltages = os.path.join(folder_name, file_name)
+    logic_capture.start_capture(folder_name+'/'+file_name)
 
 
 class LogicCapture:
@@ -83,7 +84,7 @@ class LogicCapture:
 
             capture_configuration = automation.CaptureConfiguration(
                 capture_mode=automation.TimedCaptureMode(self.duration_seconds),
-                buffer_size_megabytes= 10000
+                buffer_size_megabytes= 20000
             )
 
             with manager.start_capture(
@@ -111,52 +112,21 @@ class LogicCapture:
         
 if __name__ == "__main__":
     print("MultiScripting Saleae")
-    Lstring = '30cm'
-    IDstring = '3-32'
-    check_valve_type = 'tube'
-    # Pressure Coarse Parameters
-    Pmax = 300
-    Pmin = -int(Pmax / 4)
-    Pstart = 0
-    num_steps = 20
-    step_size = int((Pmax - Pmin) / num_steps)
-    plateau_time = 30
-    h_init_cm = '8.3cm'
-    vl_init   = '1000mL'
-
-
-    exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node-h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
-    calibration_folder = exp_folder+r'/calibration_'
-    voltages_path = r'output/analog_voltages'
-    pressure_path = r'output/analog_pressures'
-
-    coarse_parameters = {
-        "nb_controllers": 1,
-        "IDstring": IDstring,
-        "Lstring": Lstring,
-        "check_valve_type": check_valve_type,
-        "plateau_time": plateau_time,
-        'Pstart': Pstart,
-        "Pmax": Pmax,
-        "Pmin": Pmin,
-        'h_init': h_init_cm,
-        'vl_init': vl_init,
-        "step_size": step_size,
-        "exp_name": exp_folder,
-    }
-
-    nstep_up1 = int((Pmax - Pstart)/step_size)+1
-    max_p = Pstart + step_size*(nstep_up1-1)
-    nstep_down1 = int((max_p - Pmin)/step_size)
-    min_p = max_p - step_size*(nstep_down1)
-    nstep_up2 = - nstep_up1 + nstep_down1+1
-
-    total_seconds = plateau_time* (nstep_up1 + nstep_down1 + nstep_up2)
-    total_mins = total_seconds // 60
-    calibration_time_s = 3
+    param_dict = json.loads(sys.argv[1]) # Parse the JSON string back to a dictionary
     
+    calibration_flag = param_dict['calibration_flag']
 
-    process_saleae(exp_folder, voltages_path, pressure_path, total_seconds)
-    # process_saleae(calibration_folder, voltages_path, pressure_path, calibration_time_s )
+    master_folder_path = param_dict['master_folder_path']
+    calibration_subfolder = param_dict['calibration_subfolder']
+    voltages_analog_subfolder = param_dict['voltages_subfolder']
+
+    calibration_time_s = param_dict['calibration_time_s']
+    total_seconds = param_dict['total_seconds']
+
+
+    if calibration_flag:
+        process_saleae(master_folder_path, calibration_subfolder, calibration_time_s)
+    else:
+        process_saleae(master_folder_path, voltages_analog_subfolder, total_seconds)
 
     

@@ -4,6 +4,8 @@ import json
 import matplotlib.pyplot as plt
 import time
 import os
+import sys
+import json
 
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -19,11 +21,11 @@ p_max_1 = ContextVar('p_max_1')
 
 
 # Push_Pull_Pressure.py
-def process_push_pull_pressure(dic_parameters):
+def process_push_pull_pressure(dict_parameters):
     # Add the functionality from Push_Pull_Pressure.py here
     print("Push Pull processing started")
-    pressure_control = PP_Pressure(dic_parameters["nb_controllers"], dic_parameters["exp_name"])
-    pressure_control.experiment_single_cycle(dic_parameters)
+    pressure_control = PP_Pressure(dict_parameters["nb_controllers"], dict_parameters["exp_name"])
+    pressure_control.experiment_single_cycle(dict_parameters)
     
 
 @contextmanager
@@ -184,7 +186,7 @@ class PP_Pressure:
                 }
             json.dump(protocol, fp)
 
-    def plot_intputs(self):
+    def save_plot_intputs(self):
         fig, ax = plt.subplots(1,1, figsize=[2.5,2.5])
         self.inputs_list = np.array(self.inputs_list)
         if self.nb_controllers == 1:
@@ -201,7 +203,7 @@ class PP_Pressure:
         ax.set_ylabel("Input pressures (mbar)")
         plt.tight_layout()
         fig.savefig(f"{self.exp_name}_figure.png")
-        plt.show()
+        # plt.show()
         
     def experiment_single_cycle(self,dict):
         nb_controllers = dict["nb_controllers"]
@@ -235,56 +237,10 @@ class PP_Pressure:
             )
             ramp.create_json_file()
             print(ramp.inputs_list)
-            # ramp.plot_intputs()
+            ramp.save_plot_intputs()
 
 if __name__ == "__main__":
     print('MultiScripting Push_Pull_Pressure.py')
-    Lstring = '30cm'
-    IDstring = '3-32'
-    check_valve_type = 'tube'
-    # Pressure Coarse Parameters
-    Pmax = 300
-    Pmin = -int(Pmax / 4)
-    Pstart = 0
-    num_steps = 20
-    step_size = int((Pmax - Pmin) / num_steps)
-    plateau_time = 30
-    h_init_cm = '8.3cm'
-    vl_init   = '1000mL'
-
-
-    exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node-h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
-    calibration_folder = exp_folder+r'/calibration_'
-    voltages_path = r'output/analog_voltages'
-    pressure_path = r'output/analog_pressures'
-
-    coarse_parameters = {
-        "nb_controllers": 1,
-        "IDstring": IDstring,
-        "Lstring": Lstring,
-        "check_valve_type": check_valve_type,
-        "plateau_time": plateau_time,
-        'Pstart': Pstart,
-        "Pmax": Pmax,
-        "Pmin": Pmin,
-        'h_init': h_init_cm,
-        'vl_init': vl_init,
-        "step_size": step_size,
-        "exp_name": exp_folder,
-    }
-
-    nstep_up1 = int((Pmax - Pstart)/step_size)+1
-    max_p = Pstart + step_size*(nstep_up1-1)
-    nstep_down1 = int((max_p - Pmin)/step_size)
-    min_p = max_p - step_size*(nstep_down1)
-    nstep_up2 = - nstep_up1 + nstep_down1+1
-
-    total_seconds = plateau_time* (nstep_up1 + nstep_down1 + nstep_up2)
-    total_mins = total_seconds // 60
-    calibration_time_s = 3
-
-    process_push_pull_pressure(coarse_parameters)
-
-    json_file = os.path.join(exp_folder,"exp_params.json")
-    with open(json_file, 'w') as fp:
-        json.dump(coarse_parameters, fp)
+    param_dict = json.loads(sys.argv[1]) # Parse the JSON string back to a dictionary
+    
+    process_push_pull_pressure(param_dict)
