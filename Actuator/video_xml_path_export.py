@@ -1,48 +1,44 @@
 import xml.etree.ElementTree as ET
-import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_xml_data(xml_file_path):
-    try:
-        # Parse the XML file
-        tree = ET.parse(xml_file_path)
-        root = tree.getroot()
+def convert_time(time_str):
+    # Convert time from the format "0.00" to float
+    return float(time_str)
 
-        # Find the relevant data within the XML structure
-        data = []
-        for track in root.findall(".//Track"):
-            for coords in track.findall(".//Coords"):
-                x = float(coords.get("x"))
-                y = float(coords.get("y"))
-                t = float(coords.get("t"))
-                data.append((x, y, t))
+def read_trajectory_data(file_path):
+    time = []
+    x_values = []
+    y_values = []
 
-        # Convert data to a Pandas DataFrame
-        df = pd.DataFrame(data, columns=["x", "y", "t"])
+    # Parse the XML file
+    tree = ET.parse(file_path)
+    root = tree.getroot()
 
-        # Plot the data using Matplotlib
-        plt.figure(figsize=(10, 6))
-        plt.plot(df["x"], label="x")
-        plt.plot(df["y"], label="y")
-        plt.plot(df["t"], label="t")
+    # Find the "Track" element (if it exists)
+    track_element = root.find(".//Track")
 
-        # Set plot title and labels
-        plt.title("XML Data Plot")
-        plt.xlabel("Index")
-        plt.ylabel("Values")
+    if track_element is not None:
+        # Find the "Coords" elements within the "Track" element and extract the numeric values
+        for coord in track_element.findall(".//Coords"):
+            x, y, t = map(float, coord.text.split())
+            time.append(convert_time(t))
+            x_values.append(x)
+            y_values.append(y)
 
-        # Show the legend
-        plt.legend()
+    return time, x_values, y_values
 
-        # Show the plot
-        plt.show()
-
-    except FileNotFoundError:
-        print(f"Error: The file '{xml_file_path}' was not found.")
-    except Exception as e:
-        print(f"Error: An error occurred while plotting the data.\n{e}")
+def plot_trajectory(file_path):
+    time, x_values, y_values = read_trajectory_data(file_path)
+    plt.figure(figsize=(10, 6))
+    plt.plot(time, x_values, label='X Values', marker='o')
+    plt.plot(time, y_values, label='Y Values', marker='o')
+    plt.xlabel('Time')
+    plt.ylabel('X and Y Values')
+    plt.title('X and Y Values vs. Time')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 if __name__ == "__main__":
-    # Replace 'your_file.xml' with the path to your XML file
-    file_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Video\Flexures\working_flexure1_rotation_circle_position\working_flexure1_rotation_circle_position.xml"
-    plot_xml_data(file_path)
+    xml_file_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Video\Flexures\working_flexure1_rotation_circle_position\working_flexure1_rotation_circle_position.xml"
+    plot_trajectory(xml_file_path)

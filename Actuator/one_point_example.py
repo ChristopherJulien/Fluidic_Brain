@@ -5,7 +5,7 @@ from matplotlib.widgets import Slider
 a = np.linspace(0, np.pi, 1000)  # Generate x values
 
 K = 1
-L = 1
+L = 4
 
 # Define the equation
 def x_equation(a):
