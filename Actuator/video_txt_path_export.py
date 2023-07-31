@@ -13,10 +13,11 @@ def read_trajectory_data(file_path):
             if line.strip() and not line.startswith('#'):
                 try:
                     t, x, y = map(float, line.split())
-                    print('time, position x, position y:', t, x, y)
+                    # print('time, position x, position y:', t, x, y)
                     time.append(t)
-                    x_values.append(x)
-                    y_values.append(y)
+                    if y >2:
+                        x_values.append(-x)
+                        y_values.append(y)
                 except ValueError:
                     # Skip lines that cannot be converted to float (e.g., headers)
                     pass
@@ -38,5 +39,5 @@ def plot_trajectory(file_path):
     plt.show()
 
 if __name__ == "__main__":
-    file_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Video\Flexures\working_flexure1_rotation_circle_position\working_flexure1_rotation_circle_position.txt"
+    file_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Media\Flexures\working_flexure2_rotation_circle_position\working_flexure2.txt"
     plot_trajectory(file_path)
