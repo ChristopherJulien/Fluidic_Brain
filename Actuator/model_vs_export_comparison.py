@@ -3,6 +3,9 @@ import numpy as np
 import math
 import sys
 
+
+# TODO FIX THE PLOTTING OF THESE VARIABLES
+
 Length = 4.73  # cm
 Width = 0.24  # cm
 angles = np.linspace(-75*(np.pi)/180, 67*(np.pi) /
