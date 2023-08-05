@@ -64,4 +64,4 @@ anim
 
 from matplotlib.animation import FuncAnimation, PillowWriter
 # save animation at 20 frames per second 
-anim.save("graph.gif", dpi=250, writer=PillowWriter(fps=20))
+anim.save("graph2.gif", dpi=250, writer=PillowWriter(fps=20))
