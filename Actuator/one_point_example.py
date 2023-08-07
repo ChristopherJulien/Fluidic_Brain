@@ -53,3 +53,6 @@ legend_text = 'K = {}\nL = {}'.format(K, L)
 ax.legend([line, point], ['Equation', 'Point'], loc='upper right', title=legend_text)
 
 plt.show()
+
+
+# matplot lib librarr FANCY ARROW
