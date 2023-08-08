@@ -97,6 +97,8 @@ def plot_arrow_trajectory(arrow_path, base_str: str, arrow_str: str):
     skip_1s = int(1000/frame_delay_ms)
     skip = skip_1s
 
+    # Quiver
+
     plt.figure(figsize=(10, 6))
     plt.scatter(base_x_values[::skip], base_y_values[::skip],
                 label='', marker='o', color='b')
