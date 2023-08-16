@@ -535,6 +535,7 @@ if __name__ == "__main__":
     print("MultiScripting SLS.py")    
     param_dict = json.loads(sys.argv[1]) # Parse the JSON string back to a dictionary
     master_folder_path = param_dict['master_folder_path']
+    # Create Subfolder for the flow
     flow_subfolder = param_dict['flow_subfolder']
     total_seconds = param_dict['total_seconds']
     process_sls_1500(total_seconds, master_folder_path,flow_subfolder)

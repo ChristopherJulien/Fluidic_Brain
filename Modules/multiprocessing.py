@@ -34,23 +34,27 @@ coarse_parameters = {
 total_seconds = plateau_time * step_size
 total_mins = total_seconds // 60
 print("Total Duration: {}mins {}s".format(total_mins, total_seconds % 60))
+
 if __name__ == "__main__":
+    # Create master test folder
+    master_folder_path = coarse_parameters['master_folder_path']
+
     # Create threads for each script
-    flg_thread = threading.Thread(
+    push_pull_pressure = threading.Thread(
         target=Push_Pull_Pressure.process_push_pull_pressure(coarse_parameters))
-    sls_thread = threading.Thread(target=SLS_1500.process_sls_1500(
-        total_seconds=total_seconds, file_name=exp_folder))
-    saleae_thread = threading.Thread(target=Saleae.process_saleae(
-        exp_folder, voltages_path, pressure_path, total_seconds))
+    # sls_thread = threading.Thread(target=SLS_1500.process_sls_1500(
+    #     total_seconds=total_seconds, file_name=exp_folder))
+    # saleae_thread = threading.Thread(target=Saleae.process_saleae(
+    #     exp_folder, voltages_path, pressure_path, total_seconds))
 
     # Start the threads
     # saleae_thread.start()
     # sls_thread.start()
-    flg_thread.start()
+    push_pull_pressure.start()
 
     # Wait for all threads to finish
     # saleae_thread.join()
     # sls_thread.join()
-    flg_thread.join()
+    push_pull_pressure.join()
 
     print("All scripts processed.")
