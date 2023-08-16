@@ -155,5 +155,6 @@ def plot_arrow_trajectory(arrow_path, base_str: str, arrow_str: str):
 if __name__ == "__main__":
     # point_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Media\Flexures\working_flexure2_rotation_circle_position\working_flexure2.txt"
     # plot_point_trajectory(point_path)
-    arrow_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Media\Flexures\rupture_flexure_arrow_positions\underwater_failure_tube_v.txt"
+    # arrow_path = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Actuator\Single_Actuator_Media\Flexures\rupture_flexure_arrow_positions\underwater_failure_tube_v.txt"
+    arrow_path = r"Actuator/Single_Actuator_Media/Flexures/rupture_flexure_arrow_positions/underwater_failure_tube_v.txt"
     plot_arrow_trajectory(arrow_path, '# pos_blue', '# pos_red')
