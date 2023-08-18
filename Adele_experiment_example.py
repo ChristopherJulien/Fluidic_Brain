@@ -1,6 +1,6 @@
-from Digitizer_Client import *
-from syringe_control import *
-import SLS_1500 as flow_client
+from Modules.Digitizer_Client import *
+from Modules.syringe_control import *
+import Modules.sls_1500 as flow_client
 def create_folder(path):
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -56,7 +56,7 @@ if __name__=="__main__":
     runtime = 60
     digitizer,channels = init_client(mode="analog",analog_sample_rate=5000,capture_time=runtime)
     syringeA = Syringe("a", '1', 'bdp')
-    pump = Pump("A", "COM5", syringe1=syringeA)
+    pump = Pump("A", "COM9", syringe1=syringeA)
     pump.stop()
     experiment(flow_rates=pump_flow_rates,digitizer=digitizer,channels=channels,pump=pump,syringe=syringeA,path=path,runtime=runtime)
     digitizer.exit()
