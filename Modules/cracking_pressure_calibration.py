@@ -13,12 +13,13 @@ Pmin = -int(Pmax / 4)
 step_size = int((Pmax - Pmin) / 20.)
 plateau_time = 2
 # plateau_time = 30
-exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_coarse/'.format(Lstring, IDstring, check_valve_type)
+exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_coarse/'.format(
+    Lstring, IDstring, check_valve_type)
 voltages_path = r'output/analog_voltages'
 pressure_path = r'output/analog_pressures'
 
 
-total_seconds = plateau_time* step_size
+total_seconds = plateau_time * step_size
 total_mins = total_seconds // 60
 print("Total Duration: {}mins {}s".format(total_mins, total_seconds % 60))
 coarse_parameters = {
@@ -42,13 +43,13 @@ fine_parameters = {
     "check_valve_type": check_valve_type,
     "plateau_time": 30,
     'Pstart': 0,
-    "Pmax":40,
+    "Pmax": 40,
     "Pmin": -40,
     "step_size": int((Pmax-Pmin)/20.),
-    "file_string": './node_tube_{:s}_ID_{:s}_{:s}_node_fine/input_ramp'.format(Lstring, IDstring,check_valve_type)
+    "file_string": './node_tube_{:s}_ID_{:s}_{:s}_node_fine/input_ramp'.format(Lstring, IDstring, check_valve_type)
 }
 
-if __name__=="__main__":
+if __name__ == "__main__":
     pass
 
     # FLUIGENT Push Pull Pressure
@@ -68,8 +69,3 @@ if __name__=="__main__":
     # analog_pressures = os.path.join(os.getcwd(), exp_folder + pressure_path)
     # logic_capture.process_csv(r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\node_tube_30cm_ID_3-16_cv3_node_coarse\output\analog_voltages\analog.csv',
     #                            analog_pressures)
-
-
-
-
-    

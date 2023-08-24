@@ -1,0 +1,436 @@
+from math import sqrt
+from circle_fit import taubinSVD
+from circle_fit import hyperSVD
+import os
+import glob
+import re
+import pandas as pd
+import matplotlib.pyplot as plt
+import sys
+from datetime import datetime
+import numpy as np
+from numpy.polynomial.polynomial import Polynomial
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from natsort import natsorted
+import pickle
+import math
+import json
+
+pressure_color = 'dodgerblue'
+forward_color = 'indianred'
+forward_color_second = 'lightcoral'
+backward_color = 'steelblue'
+backward_color_second = 'lightsteelblue'
+SKIP_100ms = 1
+SKIP_1s = 2
+SKIP_10s = 3
+
+# Python3 implementation of the approach
+
+# Function to find the circle on
+# which the given three points lie
+
+
+def findRadius(x1, y1, x2, y2, x3, y3):
+    point_coordinates = [[x1, y1], [x2, y2], [x3, y3]]
+    xc, yc, r, sigma = taubinSVD(point_coordinates)
+
+    print("Centre = (", xc, ", ", yc, ")")
+    print("Radius = ", r)
+    return r
+
+
+def get_radius_time_list(arrow_pos, base_pos, p3):
+    radius_array = np.zeros(len(arrow_pos[0]))
+    time_array = np.zeros(len(arrow_pos[0]))
+
+    for i in range(len(arrow_pos[0])):
+        try:
+            r = findRadius(arrow_pos[1][i], arrow_pos[2][i], base_pos[1][i],
+                           base_pos[2][i], p3[0], p3[1])
+            print("arrow position x, y:", arrow_pos[1][i], arrow_pos[2][i])
+            print("base position x, y:", base_pos[1][i], base_pos[2][i])
+            print("p3 position x, y:", p3[0], p3[1])
+            radius_array[i] = r
+            time_array[i] = arrow_pos[0][i]
+        except IndexError:
+            print(f"Index {i} is out of range for the coordinate lists.")
+            pass
+
+    return radius_array, time_array
+
+
+class Plot:
+    def __init__(self, folder_path, skip=None):
+        folder_path = folder_path
+        pressure_path = None
+        frame_delay = None
+        # skip_100ms = int(100/frame_delay_ms)
+        # skip_1s = int(1000/frame_delay_ms)
+        # skip_10s = int(10000/frame_delay_ms)
+        skip = None
+
+    def read_point_trajectory_data(self, file_path):
+        time = []
+        x_values = []
+        y_values = []
+
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            lines = file.readlines()
+            print(f"Number of lines read: {len(lines)}")
+            for line in lines:
+                if line.strip() and not line.startswith('#'):
+                    try:
+                        t, x, y = map(float, line.split())
+                        # print('time, position x, position y:', t, x, y)
+                        time.append(t)
+                        x_values.append(-x)
+                        y_values.append(y)
+                    except ValueError:
+                        # Skip lines that cannot be converted to float (e.g., headers)
+                        pass
+
+        return time, x_values, y_values
+
+    def read_arrow_trajectory_data(self, file_path, base_str: str, arrow_str: str,):
+        time_base_ms, base_x_values, base_y_values = [], [], []
+        time_arrow_ms, arrow_x_values, arrow_y_values = [], [], []
+        flag_base, flag_arrow = False, False
+
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            lines = file.readlines()
+            print(f"Number of lines read: {len(lines)}")
+            for line in lines:
+                if line.startswith(base_str):
+                    flag_base = True
+                    flag_arrow = False
+                if line.startswith(arrow_str):
+                    flag_base = False
+                    flag_arrow = True
+                if line.strip() and not line.startswith('#'):
+                    try:
+                        t, x, y = map(float, line.split())
+                        if flag_base:
+                            # print('base, time, position x, position y:', t, x, y)
+                            time_base_ms.append(t)
+                            base_x_values.append(x)
+                            base_y_values.append(y)
+                        if flag_arrow:
+                            # print('arrow, time, position x, position y:', t, x, y)
+                            time_arrow_ms.append(t)
+                            arrow_x_values.append(x)
+                            arrow_y_values.append(y)
+                    except ValueError:
+                        # Skip lines that cannot be converted to float (e.g., headers)
+                        pass
+
+            # Offset time to zero
+            time_base_ms = np.array(time_base_ms) - time_base_ms[0]
+            time_arrow_ms = np.array(time_arrow_ms) - time_arrow_ms[0]
+
+            pos_base = (time_base_ms, base_x_values, base_y_values)
+            pos_arrow = (time_arrow_ms, arrow_x_values, arrow_y_values)
+
+        return pos_base, pos_arrow
+
+    def point_trajectory(self, file_path):
+        time, x_values, y_values = self.read_point_trajectory_data(file_path)
+        plt.figure(figsize=(10, 6))
+        plt.plot(x_values, y_values, label='Position', marker='o')
+        # plt.plot(time,y_values, label='X Values', marker='o')
+        # plt.plot(time, y_values, label='Y Values', marker='o')
+        plt.xlabel('x value')
+        plt.ylabel('y values')
+        plt.title('Trajectory')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+    def arrow_trajectory(self, arrow_path, base_str: str, arrow_str: str):
+        pos_base, pos_arrow = self.read_arrow_trajectory_data(
+            arrow_path, base_str, arrow_str)
+
+        time_base_ms, base_x_values, base_y_values = pos_base
+        time_arrow_ms, arrow_x_values, arrow_y_values = pos_arrow
+
+        frame_delay_ms = time_base_ms[1] - \
+            time_base_ms[0]  # frame delay is about 33 ms
+
+        skip_100ms = int(100/frame_delay_ms)
+        skip_1s = int(1000/frame_delay_ms)
+        skip_10s = int(10000/frame_delay_ms)
+        skip = skip_10s
+
+        # Quiver
+
+        plt.figure(figsize=(10, 6))
+        plt.scatter(base_x_values[::skip], base_y_values[::skip],
+                    label='', marker='o', color='b')
+
+        plt.plot(arrow_x_values[::skip], arrow_y_values[::skip],
+                 label='Tip Trajectory', marker='o', color='r')
+
+        plt.xlabel('X Position')
+        plt.ylabel('Y Position')
+        plt.title('Trajectory')
+        plt.axis('equal')
+        plt.legend()
+        plt.grid(True)
+
+        angles_and_times = self.get_angles(pos_base, pos_arrow)
+        for i in range(0, len(arrow_x_values), skip):  # arrow every 100 ms
+            # for i in range(0, len(time_base_ms), 30):  # arrow every 1000 ms
+            try:
+                # Compute the unit vector
+                str_angle = f'{angles_and_times[0][i]:.1f}'
+                x_1, y_1 = (base_x_values[i], base_y_values[i])
+                x_2, y_2 = (arrow_x_values[i], arrow_y_values[i])
+
+                # Plot arrow and angles
+                arrow_properties = dict(
+                    arrowstyle='->', color='b')  # Arrow properties
+                plt.annotate(str_angle,
+                             xy=(x_2, y_2), xytext=(x_1, y_1),
+                             ha="center", va="center",
+                             bbox=dict(boxstyle="round", fc="w"),
+                             arrowprops=arrow_properties)
+
+                # Add Color bar
+                # Example color values, replace with the actual values
+                color_values = [1, 2]
+                sc = plt.scatter(
+                    x_2, y_2, c=color_values[i], cmap='viridis', label='Time', alpha=0.7)
+
+            except IndexError:
+                print(f"Index {i} is out of range for the coordinate lists.")
+                pass
+
+        cbar = plt.colorbar(sc, label="Time [ms]")
+        plt.show()
+
+    def read_split_arrow_trajectory_data(self, file_path, base_f_str: str, arrow_f_str: str, base_b_str: str, arrow_b_str: str, time_offest_ms=0):
+        f_time_base_ms, f_base_x_values, f_base_y_values = [], [], []
+        f_time_arrow_ms, f_arrow_x_values, f_arrow_y_values = [], [], []
+
+        b_time_base_ms, b_base_x_values, b_base_y_values = [], [], []
+        b_time_arrow_ms, b_arrow_x_values, b_arrow_y_values = [], [], []
+
+        flag_base_f, flag_arrow_f, flag_base_b, flag_arrow_b = False, False, False, False
+
+        with open(file_path, 'r', encoding='utf-8-sig') as file:
+            lines = file.readlines()
+            print(f"Number of lines read: {len(lines)}")
+            for line in lines:
+                if line.startswith(base_f_str):
+                    flag_base_f = True
+                    flag_arrow_f = False
+                    flag_base_b = False
+                    flag_arrow_b = False
+                if line.startswith(arrow_f_str):
+                    flag_base_f = False
+                    flag_arrow_f = True
+                    flag_base_b = False
+                    flag_arrow_b = False
+                if line.startswith(base_b_str):
+                    flag_base_f = False
+                    flag_arrow_f = False
+                    flag_base_b = True
+                    flag_arrow_b = False
+                if line.startswith(arrow_b_str):
+                    flag_base_f = False
+                    flag_arrow_f = False
+                    flag_base_b = False
+                    flag_arrow_b = True
+                if line.strip() and not line.startswith('#'):
+                    try:
+                        t, x, y = map(float, line.split())
+                        if flag_base_f:
+                            # print('base, time, position x, position y:', t, x, y)
+                            f_time_base_ms.append(t)
+                            f_base_x_values.append(x)
+                            f_base_y_values.append(y)
+                        if flag_arrow_f:
+                            # print('arrow, time, position x, position y:', t, x, y)
+                            f_time_arrow_ms.append(t)
+                            f_arrow_x_values.append(x)
+                            f_arrow_y_values.append(y)
+                        if flag_base_b:
+                            # print('base, time, position x, position y:', t, x, y)
+                            b_time_base_ms.append(t)
+                            b_base_x_values.append(x)
+                            b_base_y_values.append(y)
+                        if flag_arrow_b:
+                            # print('arrow, time, position x, position y:', t, x, y)
+                            b_time_arrow_ms.append(t)
+                            b_arrow_x_values.append(x)
+                            b_arrow_y_values.append(y)
+                    except ValueError:
+                        # Skip lines that cannot be converted to float (e.g., headers)
+                        pass
+
+            # Offset time to zero
+            start_time = f_time_base_ms[0] - time_offest_ms
+            f_time_base_ms = np.array(f_time_base_ms) - start_time
+            f_time_arrow_ms = np.array(f_time_arrow_ms) - start_time
+
+            b_time_base_ms = np.array(b_time_base_ms) - start_time
+            b_time_arrow_ms = np.array(b_time_arrow_ms) - start_time
+
+            f_pos_base = (f_time_base_ms, f_base_x_values, f_base_y_values)
+            f_pos_arrow = (f_time_arrow_ms, f_arrow_x_values, f_arrow_y_values)
+            b_pos_base = (b_time_base_ms, b_base_x_values, b_base_y_values)
+            b_pos_arrow = (b_time_arrow_ms, b_arrow_x_values, b_arrow_y_values)
+
+            return f_pos_base, f_pos_arrow, b_pos_base, b_pos_arrow
+
+    def get_angles(self, base, arrow):
+        time_base_ms, base_x_values, base_y_values = base
+        time_arrow_ms, arrow_x_values, arrow_y_values = arrow
+        angles = []
+        times = []
+        frame_delay_ms = time_base_ms[1] - \
+            time_base_ms[0]  # frame delay is about 33 ms
+
+        skip_100ms = int(100/frame_delay_ms)
+        skip_1s = int(1000/frame_delay_ms)
+        skip = skip_1s
+
+        for i in range(0, len(arrow_x_values), skip):
+            try:
+                # Compute the unit vector
+                x_1, y_1 = (base_x_values[i], base_y_values[i])
+                x_2, y_2 = (arrow_x_values[i], arrow_y_values[i])
+
+                delta_x = x_1-x_2
+                delta_y = y_1-y_2
+
+                magnitude = math.sqrt(delta_x**2 + delta_y**2)
+                d_x, d_y = (delta_x / magnitude) + \
+                    arrow_x_values[i], (delta_y / magnitude)+arrow_y_values[i]
+
+                # Compute angle of rotation
+                radian = math.atan2(delta_x, delta_y)
+                angle = math.degrees(radian)
+                # str_angle = f'{angle:.1f}°'
+                angles.append(angle)
+                # radians.append(radian)
+                times.append(time_arrow_ms[i]/1000)
+
+            except IndexError:
+                print(f"Index {i} is out of range for the coordinate lists.")
+                pass
+        angles_and_times = [angles, times]
+        # print(angles_and_times)
+        return angles_and_times
+
+    def forward_backward_dashboard(self, pressure_path, file_path, base_f_str: str, arrow_f_str: str, base_b_str: str, arrow_b_str: str, time_offset_ms=0):
+
+        # Create figure with four axes
+        fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(
+            6, sharex=True, figsize=(20, 10))
+        # fig.suptitle('Dashboard Plot')
+
+        # Get positions and time data
+        f_pos_base, f_pos_arrow, b_pos_base, b_pos_arrow = self.read_split_arrow_trajectory_data(
+            file_path, base_f_str, arrow_f_str, base_b_str, arrow_b_str, time_offest_ms=time_offset_ms)
+
+        # Get Pressure data
+        with open(pressure_path, 'r') as file:
+            data = json.load(file)
+        times = data["times"]
+        input_pressures = data["input_pressures"]
+
+        # Get Angle
+        f_angles_and_times = self.get_angles(f_pos_base, f_pos_arrow)
+        b_angles_and_times = self.get_angles(b_pos_base, b_pos_arrow)
+
+        # Plot Pressure
+        ax1.set(ylabel='Pressures [mbar]')
+        ax1.scatter(times, input_pressures, label='Pressure',
+                    marker='o', color=pressure_color)
+        # Plot X Position
+        ax2.set(ylabel='X Position [cm]')
+        ax2.plot(f_pos_arrow[0]/1000, f_pos_arrow[1],
+                 label='Base F', marker='', color=forward_color)
+        ax2.plot(b_pos_arrow[0]/1000, b_pos_arrow[1],
+                 label='Base B', marker='', color=backward_color)
+
+        # Plot Y Position
+        ax3.set(ylabel='Y Position [cm]')
+        ax3.plot(f_pos_arrow[0]/1000, f_pos_arrow[2],
+                 label='Arrow F', marker='', color=forward_color)
+        ax3.plot(b_pos_arrow[0]/1000, b_pos_arrow[2],
+                 label='Arrow B', marker='', color=backward_color)
+        # Plot Angle
+        ax4.set(ylabel='Angle [°]')
+        ax4.plot(f_angles_and_times[1], f_angles_and_times[0],
+                 color=forward_color, label='Angle F', marker='')
+        ax4.plot(b_angles_and_times[1], b_angles_and_times[0],
+                 color=backward_color, label='Angle B', marker='')
+
+        # Plot Radius
+        ax5.set(ylabel='Radius [cm]')
+        p3 = [0.38, 8.11]  # Static nozzle point 3
+        f_cm, f_ms = get_radius_time_list(f_pos_arrow, f_pos_base, p3)
+        b_cm, b_ms = get_radius_time_list(b_pos_arrow, b_pos_base, p3)
+        ax5.plot(f_ms/1000, f_cm,
+                 color=forward_color, label='Radius F', marker='')
+        ax5.plot(b_ms/1000, b_cm,
+                 color=backward_color, label='Radius B', marker='')
+
+        # Plot Curvature
+        ax6.set(ylabel='Curvature [1/cm]', xlabel='Time [s]')
+        ax6.plot(f_ms/1000, 1/f_cm,
+                 color=forward_color, label='Curvature Forward', marker='')
+        ax6.plot(b_ms/1000, 1/b_cm,
+                 color=backward_color, label='Curvature Backward', marker='')
+
+        plt.show()
+
+    def forward_backward_trajectory(self, pressure_path, file_path, base_f_str: str, arrow_f_str: str, base_b_str: str, arrow_b_str: str, time_offset_ms=0):
+        #  Get positions with four axes
+        f_pos_base, f_pos_arrow, b_pos_base, b_pos_arrow = self.read_split_arrow_trajectory_data(
+            file_path, base_f_str, arrow_f_str, base_b_str, arrow_b_str, time_offest_ms=time_offset_ms)
+        time_f_base_ms, f_base_x_values, f_base_y_values = f_pos_base
+        time_f_arrow_ms, f_arrow_x_values, f_arrow_y_values = f_pos_arrow
+        time_b_base_ms, b_base_x_values, b_base_y_values = b_pos_base
+        time_b_arrow_ms, b_arrow_x_values, b_arrow_y_values = b_pos_arrow
+
+        frame_delay_ms = f_pos_base[0][1]-f_pos_base[0][0]
+
+        skip_100ms = int(100/frame_delay_ms)
+        skip_1s = int(1000/frame_delay_ms)
+        skip_10s = int(10000/frame_delay_ms)
+        skip = 1
+        alpha = 0.7
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(f_base_x_values[::skip], f_base_y_values[::skip],
+                 label='', marker='', color=forward_color, alpha=alpha)  # Adjust alpha value here
+        plt.plot(f_arrow_x_values[::skip], f_arrow_y_values[::skip],
+                 label='Forward Trajectory', marker='', color=forward_color)  # Adjust alpha value here
+        plt.plot(b_base_x_values[::skip], b_base_y_values[::skip],
+                 label='', marker='', color=backward_color, alpha=alpha)  # Adjust alpha value here
+        plt.plot(b_arrow_x_values[::skip], b_arrow_y_values[::skip],
+                 label='Backward Trajectory', marker='', color=backward_color)  # Adjust alpha value here
+
+        plt.xlabel('X Position')
+        plt.ylabel('Y Position')
+        plt.title('Trajectory')
+        plt.axis('equal')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+
+if __name__ == "__main__":
+    pressure_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\A_II_plateau_time_15_p_start_20_p_max_130_p_min20_step_size_10\push_pull\ramp.json'
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\A_II_plateau_time_15_p_start_20_p_max_130_p_min20_step_size_10\A_II_plateau_time_15_p_start_20_p_max_130_p_min20_step_size_10.txt'
+    plot = Plot(folder_path)
+    # # plot.arrow_trajectory(folder_path, '# base_f', '# arrow_f')
+
+    plot.forward_backward_trajectory(
+        pressure_path, folder_path, '# base_f', '# arrow_f', '# base_b', '# arrow_b', time_offset_ms=20000)
+    plot.forward_backward_dashboard(
+        pressure_path, folder_path, '# base_f', '# arrow_f', '# base_b', '# arrow_b', time_offset_ms=20000)

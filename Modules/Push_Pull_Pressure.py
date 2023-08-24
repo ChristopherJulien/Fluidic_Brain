@@ -4,8 +4,6 @@ import json
 import matplotlib.pyplot as plt
 import time
 import os
-import sys
-import json
 
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -22,8 +20,18 @@ p_max_1 = ContextVar('p_max_1')
 
 # Push_Pull_Pressure.py
 def process_push_pull_pressure(dict_parameters):
-    # Add the functionality from Push_Pull_Pressure.py here
     print("Push Pull processing started")
+    exp_folder = dict_parameters["exp_name"]
+    # micro_flow_flg_subfolder = dict_parameters["micro_flow_flg_subfolder"]
+    pressure_ramp_subfolder = dict_parameters["pressure_ramp_subfolder"]
+
+    for subfolder_path in [exp_folder+'/'+pressure_ramp_subfolder]:
+        if not os.path.exists(exp_folder+'/'+subfolder_path):
+            os.mkdir(subfolder_path)
+            print(f"Subfolder {subfolder_path} created successfully.")
+        else:
+            print(f"Subfolder {subfolder_path} already exists.")
+
     pressure_control = PP_Pressure(
         dict_parameters["nb_controllers"], dict_parameters["exp_name"])
     pressure_control.experiment_single_cycle(dict_parameters)
@@ -109,6 +117,7 @@ class PP_Pressure:
             self.inputs_list.append([p_0])
             self.times_list.append(self.time)
             time.sleep(plateau_time)
+            # print(fgt_get_pressure(0))
             self.time += plateau_time
 
     def perform_ramp_two_controllers(self,
@@ -183,13 +192,15 @@ class PP_Pressure:
 
         print("Ramp finished !")
 
-    def create_json_file(self) -> None:
+    def create_json_file(self, master_folder_path) -> None:
         # Create the directory if it doesn't exist
-        directory = os.path.dirname(self.exp_name)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        push_pull_directory = master_folder_path + r"/push_pull"
+        print(push_pull_directory)
+        print(self.exp_name)
+        if not os.path.exists(push_pull_directory):
+            os.makedirs(push_pull_directory)
 
-        with open(f'{self.exp_name}ramp.json', 'w') as fp:
+        with open(f'{push_pull_directory}/ramp.json', 'w') as fp:
             protocol = {
                 "name": self.exp_name,
                 "times": self.times_list,
@@ -218,14 +229,15 @@ class PP_Pressure:
 
     def experiment_single_cycle(self, dict):
         nb_controllers = dict["nb_controllers"]
-        file_string = dict["exp_name"]
+        exp_folder = dict["exp_name"]
         plateau_time = dict["plateau_time"]
         max_p = dict["Pmax"]
         min_p = dict["Pmin"]
         start_p = dict["Pstart"]
         step_size = dict["step_size"]
+        pressure_ramp_subfolder = dict["pressure_ramp_subfolder"]
 
-        ramp = PP_Pressure(nb_controllers, file_string)
+        ramp = PP_Pressure(nb_controllers, exp_folder)
         with Pressure_Controller(nb_controllers=ramp.nb_controllers):
 
             nstep_up1 = int((max_p - start_p)/step_size)+1
@@ -234,7 +246,7 @@ class PP_Pressure:
             min_p = max_p - step_size*(nstep_down1)
             nstep_up2 = - nstep_up1 + nstep_down1+1
 
-            # print(max_p, min_p, nstep_up2)
+            # # print(max_p, min_p, nstep_up2)
             # nstep_down = 1
             # nstep_up2 = 1
             ramp.perform_one_ramp_one_controller(
@@ -246,14 +258,16 @@ class PP_Pressure:
             ramp.perform_one_ramp_one_controller(
                 start_p=min_p + step_size, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
             )
-            ramp.create_json_file()
+            ramp.create_json_file(exp_folder+'/'+pressure_ramp_subfolder)
             print(ramp.inputs_list)
-            ramp.save_plot_intputs()
+            # ramp.plot_intputs()
+
+
+def get_pressure(self, dict):
+    pass
 
 
 if __name__ == "__main__":
     print('MultiScripting Push_Pull_Pressure.py')
-    # Parse the JSON string back to a dictionary
     param_dict = json.loads(sys.argv[1])
-
     process_push_pull_pressure(param_dict)

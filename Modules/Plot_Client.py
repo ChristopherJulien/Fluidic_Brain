@@ -16,6 +16,13 @@ SLS = 1
 FLG = 2
 WATER = 3
 GLYCEROL = 4
+channel_dict = {
+    "Time [s]": ('Time [s]', 'none', 's', 'none'),
+    "Channel 0": ('Channel 0', 'black', '25kPa', 0.018),
+    "Channel 1": ('Channel 1', 'brown', '2kPa', 0.2),
+    "Channel 2": ('Channel 2', 'red',  'Source', 5.0),
+    "Channel 3": ('Channel 3', 'yellow', '7kPa', 0.057)
+}
 
 
 def get_path_case(case, subcase):
@@ -36,9 +43,11 @@ def get_path_case(case, subcase):
 
 
 class Plot:
-    def __init__(self, SLS1500_flag=None):
+    def __init__(self, folder_path, SLS1500_flag=None):
         self.directory = os.path.dirname(os.path.abspath(__file__))
+        self.folder_path = folder_path
         self.SLS1500_flag = SLS1500_flag
+        self.exp_name = os.path.basename(self.folder_path)
 
     def unpickle(self, filename):
         inputfile = open(filename, 'rb')
@@ -290,37 +299,30 @@ class Plot:
         # plt.savefig(save_path)
         # print("Plot saved: {}".format(save_path))
 
-    def channels_vs_time(self, folder_path, channel_dict):
-        if channel_dict is None:
-            channel_dict = {
-                "Time [s]": ('Time [s]', 'none', 's', 'none'),
-                "Channel 4": ('Channel 4', 'yellow', '25kPa', 0.018),
-                "Channel 5": ('Channel 5', 'green', '2kPa', 0.2),
-                "Channel 6": ('Channel 6', 'blue', '7kPa', 0.057),
-                "Channel 7": ('Channel 7', 'purple', 'V_source', 5.0)
-            }
+    def channels_vs_time(self, save=None):
         try:
             # Load data from CSV using pandas
-            filepath = folder_path + r'\output\analog_voltages\analog.csv'
+            filepath = self.folder_path + r'\voltages_saleae\analog_voltages\analog.csv'
+
             df = pd.read_csv(filepath)
 
             # Extract columns for time and channels
             time = df[channel_dict['Time [s]'][0]]
-            channel_4 = df[channel_dict['Channel 4'][0]]
-            channel_5 = df[channel_dict['Channel 5'][0]]
-            channel_6 = df[channel_dict['Channel 6'][0]]
-            channel_7 = df[channel_dict['Channel 7'][0]]
+            channel_0 = df[channel_dict['Channel 0'][0]]
+            channel_1 = df[channel_dict['Channel 1'][0]]
+            channel_2 = df[channel_dict['Channel 2'][0]]
+            channel_3 = df[channel_dict['Channel 3'][0]]
 
             # Create the plot
             plt.figure(figsize=(10, 6))
             plt.plot(
-                time, channel_4, label=channel_dict['Channel 4'][2], color=channel_dict['Channel 4'][1])
+                time, channel_0, label=channel_dict['Channel 0'][2], color=channel_dict['Channel 0'][1])
             plt.plot(
-                time, channel_5, label=channel_dict['Channel 5'][2], color=channel_dict['Channel 5'][1])
+                time, channel_1, label=channel_dict['Channel 1'][2], color=channel_dict['Channel 1'][1])
             plt.plot(
-                time, channel_6, label=channel_dict['Channel 6'][2], color=channel_dict['Channel 6'][1])
+                time, channel_2, label=channel_dict['Channel 2'][2], color=channel_dict['Channel 2'][1])
             plt.plot(
-                time, channel_7, label=channel_dict['Channel 7'][2], color=channel_dict['Channel 7'][1])
+                time, channel_3, label=channel_dict['Channel 3'][2], color=channel_dict['Channel 3'][1])
 
             plt.autoscale(axis='y')
             plt.xlabel('Time [s]', fontsize=20)
@@ -346,51 +348,51 @@ class Plot:
             plt.rcParams['legend.edgecolor'] = '1'
             plt.legend(fontsize=12, frameon=False)
 
+            # Save the plot
+            if save:
+                save_directory = self.exp_name
+                save_path = os.path.join(
+                    save_directory, f"channels_vs_time_{self.exp_name}.png")
+                plt.savefig(save_path)
             # Show the plot
             plt.show()
 
         except Exception as e:
             print(f"Error: {e}")
 
-    def create_pressure_vs_time(self, folder_path, channel_dict):
-        analog_path = folder_path + r'\output\analog_voltages\analog.csv'
-        os.makedirs(folder_path + r'\output\analog_pressure', exist_ok=True)
-        pressure_path = folder_path + r'\output\analog_pressure\pressures.csv'
+    def create_pressure_vs_time(self, folder_path):
+        analog_path = folder_path + r'/voltages_saleae/analog_voltages/analog.csv'
 
-        if channel_dict is None:
-            channel_dict = {
-                "Time [s]": ('Time [s]', 'none', 's', 'none'),
-                "Channel 4": ('Channel 4', 'yellow', '25kPa', 0.018),
-                "Channel 5": ('Channel 5', 'green', '2kPa', 0.2),
-                "Channel 6": ('Channel 6', 'blue', '7kPa', 0.057),
-                "Channel 7": ('Channel 7', 'purple', 'Source', 5.0)
-            }
+        os.makedirs(
+            folder_path + r'/voltages_saleae/analog_pressures', exist_ok=True)
+        pressure_path = folder_path + r'\voltages_saleae\analog_pressures\pressures.csv'
 
-        # # Read the original CSV file
+        # Read the original CSV file
         df = pd.read_csv(analog_path)
 
         # Change column headers to our desired names
         df.columns = [channel_dict["Time [s]"][2],
-                      channel_dict["Channel 4"][2],
-                      channel_dict["Channel 5"][2],
-                      channel_dict["Channel 6"][2],
-                      channel_dict["Channel 7"][2]]
+                      channel_dict["Channel 0"][2],
+                      channel_dict["Channel 1"][2],
+                      channel_dict["Channel 2"][2],
+                      channel_dict["Channel 3"][2]]
         df.to_csv(pressure_path, index=False)
 
         # Apply formula to convert voltage to pressure
-        df[channel_dict["Channel 4"][2]] = (
-            df[channel_dict["Channel 4"][2]] / df[channel_dict["Channel 7"][2]] - 0.5) / channel_dict["Channel 4"][3] * 10
-        df[channel_dict["Channel 5"][2]] = (
-            df[channel_dict["Channel 5"][2]] / df[channel_dict["Channel 7"][2]] - 0.5) / channel_dict["Channel 5"][3] * 10
-        df[channel_dict["Channel 6"][2]] = (
-            df[channel_dict["Channel 6"][2]] / df[channel_dict["Channel 7"][2]] - 0.5) / channel_dict["Channel 6"][3] * 10
+        df[channel_dict["Channel 0"][2]] = (
+            df[channel_dict["Channel 0"][2]] / 5 - 0.5) / channel_dict["Channel 0"][3] * 10
+        df[channel_dict["Channel 1"][2]] = (
+            df[channel_dict["Channel 1"][2]] / 5 - 0.5) / channel_dict["Channel 1"][3] * 10
+        df[channel_dict["Channel 3"][2]] = (
+            df[channel_dict["Channel 3"][2]] / 5 - 0.5) / channel_dict["Channel 3"][3] * 10
 
         # Save the modified DataFrame to the new CSV file
         df.to_csv(pressure_path, index=False)
         print(f"New pressures.csv created successfully.")
 
-    def pressure_vs_time(self, folder_path):
-        pressure_path = folder_path + r'\output\analog_pressure\pressures.csv'
+    def pressure_vs_time(self, save=None):
+        pressure_path = self.folder_path + \
+            r'\voltages_saleae\analog_pressures\pressures.csv'
         df = pd.read_csv(pressure_path)
 
         plt.figure(figsize=(10, 6))
@@ -409,10 +411,27 @@ class Plot:
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_linewidth(0.5)
+        ax.spines['bottom'].set_linewidth(0.5)
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        # Customize the legend
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        plt.legend(fontsize=12, frameon=False)
+
+        # Save the plot
+        if save:
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"pressures_vs_time_{self.exp_name}.png")
+            plt.savefig(save_path)
+
         plt.show()
 
     def sls_flow_measurements(self, folder_path, save=None):
         flow_path = folder_path + r'\sls_flow_measurments.csv'
+        # flow_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\testsls_flow_measurments.csv'
         print("Plotting Flow Rate Over Time")
         # Set the figsize to the screen aspect ratio
         fig, ax = plt.subplots(1, 1, figsize=(16, 9))
@@ -421,7 +440,7 @@ class Plot:
         print(df)
 
         mL_min = df['mL/min'].tolist()
-        s = df['s'].tolist()
+        s = df['ms'].tolist()
 
         ax.plot(s, mL_min, label='q measured mL/min')
         ax.autoscale(axis='y')
@@ -456,17 +475,14 @@ class Plot:
 #     return pressure
 
 if __name__ == "__main__":
-    plot = Plot()
-    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\node_tube_30cm_ID_3-32_tube_node-h_init8.3cm_vl_init1000mL'
+    # folder_path_7kp = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Pressure_Ramp_7kp_p_start_0_p_max_70_p_min0_step_size_5'
+    # plot = Plot(folder_path=folder_path_7kp)
+    # plot.channels_vs_time(save=True)
+    # plot.create_pressure_vs_time(folder_path_7kp)
+    # plot.pressure_vs_time(save=True)
 
-    channel_dict = {
-        "Time [s]": ('Time [s]', 'none', 's', 'none'),
-        "Channel 4": ('Channel 4', 'yellow', '25kPa', 0.018),
-        "Channel 5": ('Channel 5', 'green', '2kPa', 0.2),
-        "Channel 6": ('Channel 6', 'blue', '7kPa', 0.057),
-        "Channel 7": ('Channel 7', 'purple', 'Source', 5.0)
-    }
-    # plot.channels_vs_time(folder_path, channel_dict)
-    # plot.create_pressure_vs_time(folder_path, channel_dict)
-    # plot.pressure_vs_time(folder_path)
-    plot.sls_flow_measurements(folder_path)
+    folder_path_25kp = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Pressure_Ramp_25kp_plateau_time_s_5_p_start_0_p_max_70_p_min0_step_size_5'
+    plot = Plot(folder_path=folder_path_25kp)
+    plot.channels_vs_time(save=True)
+    plot.create_pressure_vs_time(folder_path_25kp)
+    plot.pressure_vs_time(save=True)
