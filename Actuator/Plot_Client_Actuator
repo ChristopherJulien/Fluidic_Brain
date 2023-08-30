@@ -324,6 +324,11 @@ class Plot:
         # print(angles_and_times)
         return angles_and_times
 
+    def moving_average(self, data, window_size):
+        cumsum = np.cumsum(data)
+        cumsum[window_size:] = cumsum[window_size:] - cumsum[:-window_size]
+        return cumsum[window_size - 1:] / window_size
+
     def forward_backward_dashboard(self, pressure_path, file_path, base_f_str: str, arrow_f_str: str, base_b_str: str, arrow_b_str: str, time_offset_ms=0):
 
         # Create figure with four axes
@@ -362,6 +367,7 @@ class Plot:
                  label='Arrow F', marker='', color=forward_color)
         ax3.plot(b_pos_arrow[0]/1000, b_pos_arrow[2],
                  label='Arrow B', marker='', color=backward_color)
+
         # Plot Angle
         ax4.set(ylabel='Angle [°]')
         ax4.plot(f_angles_and_times[1], f_angles_and_times[0],
@@ -374,17 +380,38 @@ class Plot:
         p3 = [0.38, 8.11]  # Static nozzle point 3
         f_cm, f_ms = get_radius_time_list(f_pos_arrow, f_pos_base, p3)
         b_cm, b_ms = get_radius_time_list(b_pos_arrow, b_pos_base, p3)
-        ax5.plot(f_ms/1000, f_cm,
+        # Moving average
+        window_size = 10  # Window Size for moving average
+        smoothed_forward_radius = self.moving_average(f_cm, window_size)
+        smoothed_backwared_radius = self.moving_average(b_cm, window_size)
+        smoothed_time_f = f_ms[window_size - 1:] / 1000
+        smoothed_time_b = b_ms[window_size - 1:] / 1000
+        ax5.plot(smoothed_time_f, smoothed_forward_radius,
                  color=forward_color, label='Radius F', marker='')
-        ax5.plot(b_ms/1000, b_cm,
+        ax5.plot(smoothed_time_b, smoothed_backwared_radius,
                  color=backward_color, label='Radius B', marker='')
+        # ax5.plot(f_ms/1000, f_cm,
+        #          color=forward_color, label='Radius F', marker='')
+        # ax5.plot(b_ms/1000, b_cm,
+        #  color=backward_color, label='Radius B', marker='')
 
         # Plot Curvature
+        window_size = 10  # Window Size for moving average
+        smoothed_forward_cuvature = self.moving_average(1/f_cm, window_size)
+        smoothed_backwared_cuvature = self.moving_average(1/b_cm, window_size)
+        smoothed_time_f = f_ms[window_size - 1:] / 1000
+        smoothed_time_b = b_ms[window_size - 1:] / 1000
+
+        # Create Plot
         ax6.set(ylabel='Curvature [1/cm]', xlabel='Time [s]')
-        ax6.plot(f_ms/1000, 1/f_cm,
+        ax6.plot(smoothed_time_f, smoothed_forward_cuvature,
                  color=forward_color, label='Curvature Forward', marker='')
-        ax6.plot(b_ms/1000, 1/b_cm,
+        ax6.plot(smoothed_time_b, smoothed_backwared_cuvature,
                  color=backward_color, label='Curvature Backward', marker='')
+        # ax6.plot(f_ms/1000, 1/f_cm,
+        #          color=forward_color, label='Curvature Forward', marker='')
+        # ax6.plot(b_ms/1000, 1/b_cm,
+        #          color=backward_color, label='Curvature Backward', marker='')
 
         plt.show()
 
@@ -430,7 +457,7 @@ if __name__ == "__main__":
     plot = Plot(folder_path)
     # # plot.arrow_trajectory(folder_path, '# base_f', '# arrow_f')
 
-    plot.forward_backward_trajectory(
-        pressure_path, folder_path, '# base_f', '# arrow_f', '# base_b', '# arrow_b', time_offset_ms=20000)
+    # plot.forward_backward_trajectory(
+    # pressure_path, folder_path, '# base_f', '# arrow_f', '# base_b', '# arrow_b', time_offset_ms=20000)
     plot.forward_backward_dashboard(
         pressure_path, folder_path, '# base_f', '# arrow_f', '# base_b', '# arrow_b', time_offset_ms=20000)
