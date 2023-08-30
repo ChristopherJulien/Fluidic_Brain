@@ -1,9 +1,9 @@
 # Developed by Binhong Lin @ Stanford University and IBM-Almaden Research (2018)
 # This Python application is intended for use with Harvard syringe pumps to generate
-import sys
+# import sys
 import serial
 import time
-import datetime
+# import datetime
 
 # Classes: Pump() and Reaction()
 # The Pump class is used to communicate with the syringe pumps - setting the flow rates / syringe diameter / start / stop.
@@ -67,10 +67,10 @@ class Pump(object):
 
 
 
-    def __del__(self):
+    def close(self):
         time.sleep(0.05)  # The extra time delay ensures that the last command has time to be processed due to pump lag time.
         self.pump.close()
-
+    
     # This method tells the pump to inject for the specified flow rate for the specified amount of time.
     def inject(self, syringe,flowRate, time,unit):
         # flow rate in ml/min
