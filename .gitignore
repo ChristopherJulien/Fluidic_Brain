@@ -8,3 +8,6 @@
 *.JPEG
 *.MOV
 *.JPG
+**/.DS_Store
+**.DS_Store
+
