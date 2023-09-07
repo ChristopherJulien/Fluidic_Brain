@@ -17,7 +17,7 @@ check_valve_type = 'cv3'
 # Pressure Parameters
 plateau_time = 5
 Pstart = 0
-Pmax = 70
+Pmax = 90
 Pmin = 0
 # step_size = int((Pmax - Pmin) / 20.)
 step_size = 5
@@ -25,7 +25,8 @@ h_init_cm = '8.5cm'
 vl_init = '1000mL'
 # exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
 # exp_folder = ('A_II_plateau_time_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-exp_folder = ('Pressure_Ramp_25kp_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(
+# exp_folder = ('TEST_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
+exp_folder = ('CourseSweep-plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(
     plateau_time, Pstart, Pmax, Pmin, step_size))
 calibration_time_s = 30
 calibration_subfolder = r'calibration_saleae'
@@ -103,7 +104,7 @@ else:
     # Start each script in a separate process
     process3_push_pull = run_script(script3_path_push_pull)
     process1_saleae = run_script(script1_path_saleae)
-    # process2 = run_script(script2_path)
+    # process2 = run_script(script2_path_sls)
 
     close_script(process3_push_pull)
     close_script(process1_saleae)

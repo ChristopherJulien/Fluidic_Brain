@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import json
 plt.style.use('fivethirtyeight')
 
 MEASURING_INTERVAL = 10  # seconds
@@ -612,50 +613,7 @@ class SLS_1500Device(ShdlcDeviceBase):
     # fs.Continuous_Measure_and_Save(duration_s=10, buffer_interval=b"\x00\x64", plot=True) # 100s, 100ms buffer interval, plot=Trueif __name__ == "__main__":
 
 if __name__ == "__main__":
-    print("MultiScripting SLS.py")
-    Lstring = '30cm'
-    IDstring = '3-32'
-    check_valve_type = 'tube'
-    # Pressure Coarse Parameters
-    Pmax = 170
-    Pmin = 0
-    Pstart = 50
-    num_steps = 20
-    step_size = int((Pmax - Pmin) / num_steps)
-    plateau_time = 30
-    h_init_cm = '8.3cm'
-    vl_init = '1000mL'
-
-    exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node-h_init{:s}_vl_init{:s}/'.format(
-        Lstring, IDstring, check_valve_type, h_init_cm, vl_init)
-    calibration_folder = exp_folder+r'/calibration_'
-    voltages_path = r'output/analog_voltages'
-    pressure_path = r'output/analog_pressures'
-
-    coarse_parameters = {
-        "nb_controllers": 1,
-        "IDstring": IDstring,
-        "Lstring": Lstring,
-        "check_valve_type": check_valve_type,
-        "plateau_time": plateau_time,
-        'Pstart': Pstart,
-        "Pmax": Pmax,
-        "Pmin": Pmin,
-        'h_init': h_init_cm,
-        'vl_init': vl_init,
-        "step_size": step_size,
-        "exp_name": exp_folder,
-    }
-
-    nstep_up1 = int((Pmax - Pstart)/step_size)+1
-    max_p = Pstart + step_size*(nstep_up1-1)
-    nstep_down1 = int((max_p - Pmin)/step_size)
-    min_p = max_p - step_size*(nstep_down1)
-    nstep_up2 = - nstep_up1 + nstep_down1+1
-
-    total_seconds = plateau_time * (nstep_up1 + nstep_down1 + nstep_up2)
-    total_mins = total_seconds // 60
-
-    print('Time:{:d}mins, {:d}s'.format(
-        int(total_mins), int(total_seconds % 60)))
+    param_dict = json.loads(sys.argv[1])
+    total_seconds = param_dict['total_seconds']
+    exp_folder = param_dict['exp_folder']
     process_sls_1500(total_seconds=total_seconds, file_name=exp_folder)

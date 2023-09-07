@@ -19,9 +19,10 @@ GLYCEROL = 4
 channel_dict = {
     "Time [s]": ('Time [s]', 'none', 's', 'none'),
     "Channel 0": ('Channel 0', 'black', '25kPa', 0.018),
-    "Channel 1": ('Channel 1', 'brown', '2kPa', 0.2),
-    "Channel 2": ('Channel 2', 'red',  'Source', 5.0),
-    "Channel 3": ('Channel 3', 'yellow', '7kPa', 0.057)
+    "Channel 1": ('Channel 1', 'brown', '7kPa', 0.057),
+    "Channel 2": ('Channel 2', 'red',  '2kPa', 0.2),
+    "Channel 3": ('Channel 3', 'orange', 'none', 'none'),
+
 }
 
 
@@ -311,7 +312,6 @@ class Plot:
             channel_0 = df[channel_dict['Channel 0'][0]]
             channel_1 = df[channel_dict['Channel 1'][0]]
             channel_2 = df[channel_dict['Channel 2'][0]]
-            channel_3 = df[channel_dict['Channel 3'][0]]
 
             # Create the plot
             plt.figure(figsize=(10, 6))
@@ -321,8 +321,6 @@ class Plot:
                 time, channel_1, label=channel_dict['Channel 1'][2], color=channel_dict['Channel 1'][1])
             plt.plot(
                 time, channel_2, label=channel_dict['Channel 2'][2], color=channel_dict['Channel 2'][1])
-            plt.plot(
-                time, channel_3, label=channel_dict['Channel 3'][2], color=channel_dict['Channel 3'][1])
 
             plt.autoscale(axis='y')
             plt.xlabel('Time [s]', fontsize=20)
@@ -375,7 +373,8 @@ class Plot:
                       channel_dict["Channel 0"][2],
                       channel_dict["Channel 1"][2],
                       channel_dict["Channel 2"][2],
-                      channel_dict["Channel 3"][2]]
+                      channel_dict["Channel 3"][2]
+                      ]
         df.to_csv(pressure_path, index=False)
 
         # Apply formula to convert voltage to pressure
@@ -383,8 +382,8 @@ class Plot:
             df[channel_dict["Channel 0"][2]] / 5 - 0.5) / channel_dict["Channel 0"][3] * 10
         df[channel_dict["Channel 1"][2]] = (
             df[channel_dict["Channel 1"][2]] / 5 - 0.5) / channel_dict["Channel 1"][3] * 10
-        df[channel_dict["Channel 3"][2]] = (
-            df[channel_dict["Channel 3"][2]] / 5 - 0.5) / channel_dict["Channel 3"][3] * 10
+        df[channel_dict["Channel 2"][2]] = (
+            df[channel_dict["Channel 2"][2]] / 5 - 0.5) / channel_dict["Channel 2"][3] * 10
 
         # Save the modified DataFrame to the new CSV file
         df.to_csv(pressure_path, index=False)
@@ -396,9 +395,9 @@ class Plot:
         df = pd.read_csv(pressure_path)
 
         plt.figure(figsize=(10, 6))
-        plt.plot(df['s'], df['25kPa'], label='25kPa')
-        plt.plot(df['s'], df['2kPa'], label='2kPa')
-        plt.plot(df['s'], df['7kPa'], label='7kPa')
+        # plt.plot(df['s'], df['25kPa'], label='25kPa', color='black')
+        # plt.plot(df['s'], df['2kPa'], label='2kPa', color='red')
+        plt.plot(df['s'], df['7kPa'], label='7kPa', color='brown')
 
         plt.autoscale(axis='y')
         plt.xlabel('Time [s]', fontsize=20)
@@ -481,8 +480,8 @@ if __name__ == "__main__":
     # plot.create_pressure_vs_time(folder_path_7kp)
     # plot.pressure_vs_time(save=True)
 
-    folder_path_25kp = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Pressure_Ramp_25kp_plateau_time_s_5_p_start_0_p_max_70_p_min0_step_size_5'
-    plot = Plot(folder_path=folder_path_25kp)
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\7kPa_Down_Calibration-plateau_time_s_5_p_start_0_p_max_90_p_min0_step_size_5'
+    plot = Plot(folder_path=folder_path)
     plot.channels_vs_time(save=True)
-    plot.create_pressure_vs_time(folder_path_25kp)
+    plot.create_pressure_vs_time(folder_path)
     plot.pressure_vs_time(save=True)
