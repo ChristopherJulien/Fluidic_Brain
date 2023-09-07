@@ -1,0 +1,1 @@
+{"SLS1500_flag": true, "syringe_name": "B", "syringe_volume": "5", "syringe_type": "bdp", "runtime_s": 10, "pump_flow_rates": [2000.0, 1800.0, 1600.0, 1400.0000000000002, 1200.0000000000002, 1000.0, 800.0, 600.0000000000001, 400.0, 200.0, 0.0], "vtot": 1.8333333333333335, "minutes_tot": 1, "seconds_tot": 61}
