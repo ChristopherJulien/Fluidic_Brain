@@ -10,19 +10,20 @@ Copyright (c) Fluigent 2020.  All Rights Reserved.
 """
 
 # Print function for Python 2 compatibility
-from __future__ import print_function 
+from __future__ import print_function
 import time
 
 from Fluigent.SDK import fgt_init, fgt_close
 from Fluigent.SDK import fgt_get_sensorChannelsInfo
 from Fluigent.SDK import fgt_get_sensorUnit, fgt_get_sensorRange, fgt_get_sensorValue
 
-## Initialize the session
+# Initialize the session
 # This step is optional, if not called session will be automatically created
 fgt_init()
 
-## Get information about sensors and read them
+# Get information about sensors and read them
 
+print('Available sensors: ')
 sensorInfoArray, sensorTypeArray = fgt_get_sensorChannelsInfo()
 for i, sensorInfo in enumerate(sensorInfoArray):
     print('Sensor channel info at index: {}'.format(i))
@@ -35,10 +36,10 @@ for i, sensorInfo in enumerate(sensorInfoArray):
     print("Range {:0.2f} to {:0.2f} {}".format(minSensor, maxSensor, unit))
     # Read the sensor repeatedly
     for j in range(5):
-        measurement = fgt_get_sensorValue(i);
-        print('Measured {:0.2f} {}'.format(measurement, unit));
+        measurement = fgt_get_sensorValue(i)
+        print('Measured {:0.2f} {}'.format(measurement, unit))
         time.sleep(0.2)
 
 
-## Close the session
+# Close the session
 fgt_close()

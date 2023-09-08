@@ -395,13 +395,13 @@ class Plot:
         df = pd.read_csv(pressure_path)
 
         plt.figure(figsize=(10, 6))
-        # plt.plot(df['s'], df['25kPa'], label='25kPa', color='black')
-        # plt.plot(df['s'], df['2kPa'], label='2kPa', color='red')
+        plt.plot(df['s'], df['25kPa'], label='25kPa', color='black')
+        plt.plot(df['s'], df['2kPa'], label='2kPa', color='red')
         plt.plot(df['s'], df['7kPa'], label='7kPa', color='brown')
 
         plt.autoscale(axis='y')
         plt.xlabel('Time [s]', fontsize=20)
-        plt.ylabel('Pressure [kPa]', fontsize=20)
+        plt.ylabel('Pressure [mbar]', fontsize=20)
         plt.title('Pressure vs Time')
         plt.tick_params(axis='both', which='major', labelsize=16)
 
@@ -423,7 +423,44 @@ class Plot:
         if save:
             save_directory = self.exp_name
             save_path = os.path.join(
-                save_directory, f"pressures_vs_time_{self.exp_name}.png")
+                save_directory, f"set_pressures_vs_time_{self.exp_name}.png")
+            plt.savefig(save_path)
+
+        plt.show()
+
+    def measured_pressure_vs_time(self, save=None):
+        measured_pressure_path = self.folder_path + \
+            r'\pressure_ramp_flg\pressure_measurements.csv'
+        df = pd.read_csv(measured_pressure_path)
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(df['s'], df['mbar'], color='blue')
+
+        plt.autoscale(axis='y')
+        plt.xlabel('Time [s]', fontsize=20)
+        plt.ylabel('Pressure [mbar]', fontsize=20)
+        plt.title('FLG Pressure vs Time')
+        plt.tick_params(axis='both', which='major', labelsize=16)
+
+        # Customize the spines
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_linewidth(0.5)
+        ax.spines['bottom'].set_linewidth(0.5)
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        # Customize the legend
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        plt.legend(fontsize=12, frameon=False)
+
+        # Save the plot
+        if save:
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"measured_pressures_vs_time_{self.exp_name}.png")
             plt.savefig(save_path)
 
         plt.show()
@@ -480,8 +517,9 @@ if __name__ == "__main__":
     # plot.create_pressure_vs_time(folder_path_7kp)
     # plot.pressure_vs_time(save=True)
 
-    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\7kPa_Down_Calibration-plateau_time_s_5_p_start_0_p_max_90_p_min0_step_size_5'
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\CV-NORMALTUBE-GLYCEROL-plateau_time_s_30_p_start_0_p_max_600_p_min-600_step_size_200'
     plot = Plot(folder_path=folder_path)
     plot.channels_vs_time(save=True)
     plot.create_pressure_vs_time(folder_path)
     plot.pressure_vs_time(save=True)
+    plot.measured_pressure_vs_time(save=True)

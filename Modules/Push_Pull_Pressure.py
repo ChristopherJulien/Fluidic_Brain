@@ -4,7 +4,9 @@ import json
 import matplotlib.pyplot as plt
 import time
 import os
-
+import csv
+import pandas as pd
+from threading import *
 from contextlib import contextmanager
 from contextvars import ContextVar
 from Fluigent.SDK import fgt_init, fgt_close
@@ -31,10 +33,19 @@ def process_push_pull_pressure(dict_parameters):
             print(f"Subfolder {subfolder_path} created successfully.")
         else:
             print(f"Subfolder {subfolder_path} already exists.")
+    pressure_control = PP_Pressure(dict_parameters)
 
-    pressure_control = PP_Pressure(
-        dict_parameters["nb_controllers"], dict_parameters["exp_name"])
-    pressure_control.experiment_single_cycle(dict_parameters)
+    t1 = Thread(target=pressure_control.experiment_single_cycle,
+                args=(dict_parameters,))
+    t2 = Thread(target=pressure_control.save_continuous_pressure,
+                args=(dict_parameters,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    print("Push Pull processing finished")
+    exit()
 
 
 @contextmanager
@@ -90,6 +101,7 @@ class PP_Pressure:
         self.time = 0
         self.times_list = []
         self.inputs_list = []
+        self.measured_list = []
 
     def perform_one_ramp_one_controller(self, start_p, end_p, nb_steps, plateau_time) -> None:
         """Performs a pressure ramp with one controller
@@ -195,8 +207,8 @@ class PP_Pressure:
     def create_json_file(self, master_folder_path) -> None:
         # Create the directory if it doesn't exist
         push_pull_directory = master_folder_path + r"/push_pull"
-        print(push_pull_directory)
-        print(self.exp_name)
+        # print(push_pull_directory)
+        # print(self.exp_name)
         if not os.path.exists(push_pull_directory):
             os.makedirs(push_pull_directory)
 
@@ -208,7 +220,8 @@ class PP_Pressure:
             }
             json.dump(protocol, fp)
 
-    def save_plot_intputs(self):
+    def save_plot_intputs(self, master_folder_path) -> None:
+        push_pull_directory = master_folder_path + r"/push_pull"
         fig, ax = plt.subplots(1, 1, figsize=[2.5, 2.5])
         self.inputs_list = np.array(self.inputs_list)
         if self.nb_controllers == 1:
@@ -224,7 +237,7 @@ class PP_Pressure:
         ax.set_xlabel("Time (s)")
         ax.set_ylabel("Input pressures (mbar)")
         plt.tight_layout()
-        fig.savefig(f"{self.exp_name}_figure.png")
+        fig.savefig(f'{push_pull_directory}/ramp.png', dpi=300)
         # plt.show()
 
     def experiment_single_cycle(self, dict):
@@ -260,11 +273,41 @@ class PP_Pressure:
             )
             ramp.create_json_file(exp_folder+'/'+pressure_ramp_subfolder)
             print(ramp.inputs_list)
-            # ramp.plot_intputs()
+            ramp.save_plot_intputs(exp_folder+'/'+pressure_ramp_subfolder)
 
+    def save_continuous_pressure(self, dict):
+        measure_interval_s = 0.05
+        assert measure_interval_s > 0.001
 
-def get_pressure(self, dict):
-    pass
+        duration_s = dict["total_seconds"]
+        exp_folder = dict["exp_name"]
+        pressure_ramp_subfolder = dict["pressure_ramp_subfolder"]
+        master_folder_path = exp_folder+'/'+pressure_ramp_subfolder
+        measurements_directory = master_folder_path + r"/pressure_measurements.csv"
+
+        fgt_init()
+        t_start = time.time()
+        t_end = time.time() + duration_s
+        while time.time() < t_end:
+            measurement = fgt_get_pressure(0)
+            self.measured_list.append(measurement)
+            print('Current pressure {:0.2f} mbar  Time:{:0.2f}'.format(
+                measurement, time.time()-t_start))
+            self.times_list.append(time.time()-t_start)
+            time.sleep(measure_interval_s)
+
+        fgt_close()
+
+        # Open the CSV file for writing
+        headers = ['s', 'mbar']
+        with open(measurements_directory, 'w', newline='') as csvfile:
+            # Create a CSV writer
+            csv_writer = csv.writer(csvfile)
+            csv_writer.writerow(headers)
+        # Write the data from the arrays to the CSV file
+            for i in range(len(self.times_list)):
+                csv_writer.writerow(
+                    [self.times_list[i], self.measured_list[i]])
 
 
 if __name__ == "__main__":

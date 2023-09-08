@@ -16,7 +16,8 @@ def process_saleae(dict_parameters):
     voltages_subfolder = dict_parameters['voltages_subfolder']
     voltages_analog_subfolder = dict_parameters['voltages_analog_subfolder']
 
-    for subfolder_path in [exp_folder+'/'+calibration_subfolder, exp_folder+'/'+voltages_subfolder]:
+    # for subfolder_path in [exp_folder+'/'+calibration_subfolder, exp_folder+'/'+voltages_subfolder]:
+    for subfolder_path in [exp_folder+'/'+voltages_subfolder]:
         if not os.path.exists(exp_folder+'/'+subfolder_path):
             os.mkdir(subfolder_path)
             print(f"Subfolder {subfolder_path} created successfully.")
@@ -32,6 +33,7 @@ def process_saleae(dict_parameters):
     analog_sample_rate = dict_parameters['analog_sample_rate']
     logic_capture.start_capture(
         analog_voltages_path, buffer_size_megabytes, analog_sample_rate)
+    exit()
 
 
 class LogicCapture:
@@ -40,7 +42,6 @@ class LogicCapture:
 
     def add_offset(self, filename, offset):
         print("add offset")
-        # TODO: Add offset to the file look into the file and calculate the offset
 
     def volt_to_mbar(self, sensor, volt_signal, volt_source):
         cdict = {'25kPa': 0.018, '7kPa': 0.057, '2kPa': 0.2}

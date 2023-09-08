@@ -25,6 +25,7 @@ def process_sls_1500(total_seconds, file_name):
     flow_meter = SLS_1500Device(ShdlcConnection(port), slave_address=0)
     flow_meter.Continuous_Measure_and_Save(
         duration_s=total_seconds, filename=file_name, set_flow_rate_string=None,)
+    exit()
 
 # Sensor Measurement Commands
 
