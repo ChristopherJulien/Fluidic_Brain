@@ -33,7 +33,6 @@ def process_saleae(dict_parameters):
     analog_sample_rate = dict_parameters['analog_sample_rate']
     logic_capture.start_capture(
         analog_voltages_path, buffer_size_megabytes, analog_sample_rate)
-    exit()
 
 
 class LogicCapture:

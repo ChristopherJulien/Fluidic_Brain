@@ -45,7 +45,6 @@ def process_push_pull_pressure(dict_parameters):
     t2.join()
 
     print("Push Pull processing finished")
-    exit()
 
 
 @contextmanager
@@ -273,7 +272,7 @@ class PP_Pressure:
             )
             ramp.create_json_file(exp_folder+'/'+pressure_ramp_subfolder)
             print(ramp.inputs_list)
-            ramp.save_plot_intputs(exp_folder+'/'+pressure_ramp_subfolder)
+            # ramp.save_plot_intputs(exp_folder+'/'+pressure_ramp_subfolder)
 
     def save_continuous_pressure(self, dict):
         measure_interval_s = 0.05

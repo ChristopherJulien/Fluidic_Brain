@@ -7,27 +7,33 @@ import sys
 import json
 import os
 
-# Parameters to manually set
+# Test Parameters
 sls_calibration_flag = False
 nb_controllers = 1
 Lstring = '30cm'
 IDstring = '3-16'
 check_valve_type = 'cv3'
-
-# Pressure Parameters
-plateau_time = 30
-Pstart = 0
-Pmax = 600
-Pmin = -Pmax
-# step_size = int((Pmax - Pmin) / 20.)
-step_size = 200
 h_init_cm = '8.5cm'
 vl_init = '1000mL'
+
+# SLS Parameters
+sls_interval = "\x00\x64"  # recording interaval 100ms
+
+# Pressure Parameters
+plateau_time = 3
+Pstart = 0
+Pmax = 10
+Pmin = -Pmax
+# step_size = int((Pmax - Pmin) / 20.)
+step_size = 10
+
 # exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
 # exp_folder = ('A_II_plateau_time_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
 # exp_folder = ('TEST_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-exp_folder = ('CV1-PVC-1_8-30cm-GLYCEROL-plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(
+exp_folder = ('CV-NOMRALTUBE-T-1_8-30cm-GLYCEROL-plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(
     plateau_time, Pstart, Pmax, Pmin, step_size))
+
+# Folder names and paths
 calibration_time_s = 30
 calibration_subfolder = r'calibration_saleae'
 voltages_subfolder = r'voltages_saleae'
@@ -36,8 +42,10 @@ flow_subfolder = r'flow_sls'
 pressure_ramp_subfolder = r'pressure_ramp_flg'
 micro_flow_flg_subfolder = r'micro_flow_flg'
 
+# Saleas Parameters
 buffer_size_megabytes = 15000
-analog_sample_rate = 3125000
+analog_sample_rate = 781250
+# analog_sample_rate = 3125000
 
 # Setup Folder
 master_folder_path = os.path.abspath(os.getcwd()) + r"/"+exp_folder
@@ -69,7 +77,7 @@ print('Total Time: '+total_time)
 parameters_dict = {"calibration_flag": sls_calibration_flag, "nb_controllers": nb_controllers, "IDstring": IDstring, "Lstring": Lstring,
                    "check_valve_type": check_valve_type, "plateau_time": plateau_time, "Pstart": Pstart, "Pmax": Pmax, "Pmin": Pmin, "step_size": step_size, "h_init_cm": h_init_cm, "vl_init_mL": vl_init,
                    "exp_name": exp_folder, "calibration_subfolder": calibration_subfolder, "voltages_subfolder": voltages_subfolder, 'voltages_analog_subfolder': voltages_analog_subfolder, 'flow_subfolder': flow_subfolder, 'pressure_ramp_subfolder': pressure_ramp_subfolder, 'micro_flow_flg_subfolder': micro_flow_flg_subfolder,
-                   'total_seconds': total_seconds, "total_time": total_time, "calibration_time_s": calibration_time_s, 'master_folder_path': master_folder_path, 'buffer_size_megabytes': buffer_size_megabytes, 'analog_sample_rate': analog_sample_rate}
+                   "total_seconds": total_seconds, "total_time": total_time, "calibration_time_s": calibration_time_s, 'master_folder_path': master_folder_path, 'buffer_size_megabytes': buffer_size_megabytes, 'analog_sample_rate': analog_sample_rate, 'sls_interval': sls_interval}
 
 # Save the dictionary to a JSON file in folder_path
 with open(path_to_save_parameters, "w") as json_file:
@@ -102,10 +110,10 @@ if sls_calibration_flag:
 else:
     print('Experiment started')
     # Start each script in a separate process
-    process3_push_pull = run_script(script3_path_push_pull)
     process1_saleae = run_script(script1_path_saleae)
     process2_sls = run_script(script2_path_sls)
+    process3_push_pull = run_script(script3_path_push_pull)
 
-    close_script(process3_push_pull)
     close_script(process1_saleae)
     close_script(process2_sls)
+    close_script(process3_push_pull)
