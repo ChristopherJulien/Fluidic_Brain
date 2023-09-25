@@ -494,17 +494,27 @@ class Plot:
             fig.savefig(f'{self.folder_path}/pressure_inputs.png', dpi=300)
         plt.show()
 
-    def measured_pressure_vs_time(self, save=None, moving_average=0, zoomed=False):
+    def measured_pressure_vs_time(self, save=None, moving_average=0, zoomed=False, nb_controllers=1):
         measured_pressure_path = self.folder_path + \
             r'\pressure_ramp_flg\pressure_measurements.csv'
         df = pd.read_csv(measured_pressure_path)
 
-        if moving_average > 0:
+        if moving_average > 0 and nb_controllers == 1:
             df['mbar'] = df['mbar'].rolling(window=moving_average).mean()
             df['s'] = df['s'].rolling(window=moving_average).mean()
 
+        if moving_average > 0 and nb_controllers == 2:
+            df['mbar_p1'] = df['mbar_p1'].rolling(window=moving_average).mean()
+            df['mbar_p2'] = df['mbar_p2'].rolling(window=moving_average).mean()
+            df['s'] = df['s'].rolling(window=moving_average).mean()
+
         fig, ax = plt.subplots(figsize=(9.0, 3.0))
-        plt.plot(df['s'], df['mbar'], color='blue')
+        if nb_controllers == 2:
+            plt.plot(df['s'], df['mbar_p1'],
+                     color='blue', label='controller 1')
+            plt.plot(df['s'], df['mbar_p2'], color='red', label='controller 2')
+        else:
+            plt.plot(df['s'], df['mbar'], color='blue')
         plt.autoscale(axis='y')
         plt.xlabel('Time [s]', fontsize=20)
         plt.ylabel('Pressure [mbar]', fontsize=20)
@@ -707,14 +717,15 @@ if __name__ == "__main__":
     # plot.create_pressure_vs_time(folder_path_7kp)
     # plot.pressure_vs_time(save=True)
 
-    folder_path = r'FS-NoFlow-Threaded-plateau_time10_p_start_0_p_max_3_p_min0_step_size_3.000000'
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Test_21_Controller'
     plot = Plot(folder_path=folder_path, SLS1500_flag=False)
 
-    plot.set_pressure_vs_time(save=True)
-    plot.measured_pressure_vs_time(save=True, moving_average=100, zoomed=False)
-    plot.sls_flow_measurements(save=False, moving_average=5, zoomed=False)
-    plot.channels_vs_time(save=True, moving_average=100)
-    plot.create_pressure_vs_time(folder_path)
-    plot.pressure_vs_time(save=False, moving_average=50)
-    plot.flow_vs_pressure(save=True, flow_moving_average=50, pressure_moving_average=50,
-                          pressure_sensor_value=7)
+    # plot.set_pressure_vs_time(save=True)
+    plot.measured_pressure_vs_time(
+        save=True, moving_average=10, zoomed=False, nb_controllers=2)
+    # plot.sls_flow_measurements(save=False, moving_average=5, zoomed=False)
+    # plot.channels_vs_time(save=True, moving_average=100)
+    # plot.create_pressure_vs_time(folder_path)
+    # plot.pressure_vs_time(save=False, moving_average=50)
+    # plot.flow_vs_pressure(save=True, flow_moving_average=50, pressure_moving_average=50,
+    #                       pressure_sensor_value=7)

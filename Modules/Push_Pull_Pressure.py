@@ -9,8 +9,9 @@ import pandas as pd
 from threading import *
 from contextlib import contextmanager
 from contextvars import ContextVar
-from Fluigent.SDK import fgt_init, fgt_close
+from Fluigent.SDK import fgt_init, fgt_close, fgt_detect
 from Fluigent.SDK import fgt_set_pressure, fgt_get_pressure, fgt_get_pressureRange, fgt_ERROR
+from Fluigent.SDK import fgt_get_pressureChannelCount, fgt_get_pressureChannelsInfo
 
 
 p_min_0 = ContextVar('p_min_0')
@@ -23,8 +24,9 @@ p_max_1 = ContextVar('p_max_1')
 # Push_Pull_Pressure.py
 def process_push_pull_pressure(dict_parameters):
     print("Push Pull processing started")
+    # if adding micro_flow_flg_subfolder = dict_parameters["micro_flow_flg_subfolder"]
     exp_folder = dict_parameters["exp_name"]
-    # micro_flow_flg_subfolder = dict_parameters["micro_flow_flg_subfolder"]
+
     pressure_ramp_subfolder = dict_parameters["pressure_ramp_subfolder"]
 
     for subfolder_path in [exp_folder+'/'+pressure_ramp_subfolder]:
@@ -33,22 +35,31 @@ def process_push_pull_pressure(dict_parameters):
             print(f"Subfolder {subfolder_path} created successfully.")
         else:
             print(f"Subfolder {subfolder_path} already exists.")
-    pressure_control = PP_Pressure(dict_parameters)
+    pressure_control = Pressure_Controller(dict_parameters)
 
-    t1 = Thread(target=pressure_control.experiment_single_cycle,
-                args=(dict_parameters,))
-    t2 = Thread(target=pressure_control.save_continuous_pressure,
-                args=(dict_parameters,))
+    if dict_parameters["nb_controllers"] == 1:
+
+        t1 = Thread(target=pressure_control.experiment_cycle_single_controller,
+                    args=(dict_parameters,))
+        t2 = Thread(target=pressure_control.save_continuous_pressure,
+                    args=(dict_parameters,))
+
+    elif dict_parameters["nb_controllers"] == 2:
+        t1 = Thread(target=pressure_control.experiment_cycle_double_controller,
+                    args=(dict_parameters,))
+        t2 = Thread(target=pressure_control.save_continuous_pressure,
+                    args=(dict_parameters,))
     t1.start()
     t2.start()
     t1.join()
     t2.join()
 
     print("Push Pull processing finished")
+    print("Please wait for Saleae to finish compressing saved data")
 
 
 @contextmanager
-def Pressure_Controller(nb_controllers: int = 1):
+def Pressure_Controllers_Setup(nb_controllers: int = 1):
     """Context manager to setup the experiment"""
     assert nb_controllers in [1, 2]
 
@@ -93,14 +104,15 @@ def Pressure_Controller(nb_controllers: int = 1):
     print("Setup closed")
 
 
-class PP_Pressure:
+class Pressure_Controller:
     def __init__(self, nb_controllers: int = 1, exp_name: str = None) -> None:
         self.nb_controllers = nb_controllers
         self.exp_name = exp_name
         self.time = 0
         self.times_list = []
         self.inputs_list = []
-        self.measured_list = []
+        self.measure_p1 = []
+        self.measure_p2 = []
 
     def perform_one_ramp_one_controller(self, start_p, end_p, nb_steps, plateau_time) -> None:
         """Performs a pressure ramp with one controller
@@ -155,7 +167,7 @@ class PP_Pressure:
 
         assert p_min_0.get() <= start_p1 and p_min_1.get(
         ) <= start_p2, "Start pressure must be greater than minimum pressure"
-        assert p_min_0.get() <= end_p1 and p_max_1.get(
+        assert p_min_0.get() <= end_p1 and p_min_1.get(
         ) <= end_p2, "End pressure must be greater than minimum pressure"
         assert start_p1 <= p_max_0.get() and start_p2 <= p_max_1.get(
         ), "Start pressure must be lower than maximum pressure"
@@ -239,7 +251,7 @@ class PP_Pressure:
         fig.savefig(f'{push_pull_directory}/ramp.png', dpi=300)
         # plt.show()
 
-    def experiment_single_cycle(self, dict):
+    def experiment_cycle_single_controller(self, dict):
         nb_controllers = dict["nb_controllers"]
         exp_folder = dict["exp_name"]
         plateau_time = dict["plateau_time"]
@@ -249,8 +261,8 @@ class PP_Pressure:
         nb_steps1 = dict["nb_steps1"]
         pressure_ramp_subfolder = dict["pressure_ramp_subfolder"]
 
-        ramp = PP_Pressure(nb_controllers, exp_folder)
-        with Pressure_Controller(nb_controllers=ramp.nb_controllers):
+        ramp = Pressure_Controller(nb_controllers, exp_folder)
+        with Pressure_Controllers_Setup(nb_controllers=ramp.nb_controllers):
 
             nstep_up1 = int((max_p1 - start_p)/nb_steps1)+1
             max_p1 = start_p + nb_steps1*(nstep_up1-1)
@@ -274,6 +286,62 @@ class PP_Pressure:
             print(ramp.inputs_list)
             # ramp.save_plot_intputs(exp_folder+'/'+pressure_ramp_subfolder)
 
+    def experiment_cycle_double_controller(self, dict):
+        nb_controllers = dict["nb_controllers"]
+        exp_folder = dict["exp_name"]
+        plateau_time = dict["plateau_time"]
+        pressure_ramp_subfolder = dict["pressure_ramp_subfolder"]
+
+        start_p1 = dict["start_p1"]
+        max_p1 = dict["max_p1"]
+        min_p1 = dict["min_p1"]
+        nb_steps1 = dict["nb_steps1"]
+        start_p2 = dict["start_p2"]
+        max_p2 = dict["max_p2"]
+        min_p2 = dict["min_p2"]
+        nb_steps2 = dict["nb_steps2"]
+
+        zigzag = ["zigzag"]
+        nb_big_ramp_controller = dict["nb_big_ramp_controller"]
+
+        ramp = Pressure_Controller(nb_controllers, exp_folder)
+        with Pressure_Controllers_Setup(nb_controllers=ramp.nb_controllers):
+            nstep1_up1 = int((max_p1 - start_p1)/nb_steps1)+1
+            max_p1 = start_p1 + nb_steps1*(nstep1_up1-1)
+            nstep1_down1 = int((max_p1 - min_p1)/nb_steps1)
+            min_p1 = max_p1 - nb_steps1*(nstep1_down1)
+            nstep1_up2 = - nstep1_up1 + nstep1_down1+1
+
+            nstep2_up1 = int((max_p2 - start_p2)/nb_steps2)+1
+            max_p2 = start_p2 + nb_steps2*(nstep2_up1-1)
+            nstep2_down1 = int((max_p2 - min_p2)/nb_steps2)
+            min_p2 = max_p2 - nb_steps2*(nstep2_down1)
+            nstep2_up2 = - nstep2_up1 + nstep2_down1+1
+
+            # Up Ramp
+            ramp.perform_ramp_two_controllers(
+                start_p1=start_p1, end_p1=max_p1, nb_steps1=nstep1_up1,
+                start_p2=start_p2, end_p2=max_p2, nb_steps2=nstep2_up1,
+                plateau_time=plateau_time, zigzag_p2=zigzag, nb_big_ramp_controller=nb_big_ramp_controller
+            )
+
+            # # Down Ramp
+            # ramp.perform_ramp_two_controllers(
+            #     start_p1=max_p1-nb_steps1, end_p1=min_p1, nb_steps1=nstep1_down1,
+            #     start_p2=max_p2-nb_steps2, end_p2=min_p2, nb_steps2=nstep2_down1,
+            #     plateau_time=plateau_time,
+            # )
+
+            # # To Zero Ramp
+            # ramp.perform_ramp_two_controllers(
+            #     start_p1=min_p1+nb_steps1, end_p1=0, nb_steps1=nstep1_up2,
+            #     start_p2=min_p2+nb_steps2, end_p2=0, nb_steps2=nstep2_up2,
+            #     plateau_time=plateau_time,
+            # )
+
+            # ramp.create_json_file(exp_folder+'/'+pressure_ramp_subfolder)
+            # print(ramp.inputs_list)
+
     def save_continuous_pressure(self, dict):
         measure_interval_s = 0.05
         assert measure_interval_s > 0.001
@@ -283,30 +351,67 @@ class PP_Pressure:
         pressure_ramp_subfolder = dict["pressure_ramp_subfolder"]
         master_folder_path = exp_folder+'/'+pressure_ramp_subfolder
         measurements_directory = master_folder_path + r"/pressure_measurements.csv"
+        pressureInfoArray = fgt_get_pressureChannelsInfo()
+        SNs, types = fgt_detect()
+        controllerCount = len(SNs)
+        print('Number of controllers detected: {}'.format(controllerCount))
 
-        fgt_init()
-        t_start = time.time()
-        t_end = time.time() + duration_s
-        while time.time() < t_end:
-            measurement = fgt_get_pressure(0)
-            self.measured_list.append(measurement)
-            print('Current pressure {:0.2f} mbar  Time:{:0.2f}'.format(
-                measurement, time.time()-t_start))
-            self.times_list.append(time.time()-t_start)
-            time.sleep(measure_interval_s)
+        nb_controller = dict["nb_controllers"]
+        if nb_controller == 1:
+            fgt_init()
+            t_start = time.time()
+            t_end = time.time() + duration_s
+            while time.time() < t_end:
+                measurement = fgt_get_pressure(0)
+                self.measure_p1.append(measurement)
+                print('Current pressure {:0.2f} mbar  Time:{:0.2f}'.format(
+                    measurement, time.time()-t_start))
+                self.times_list.append(time.time()-t_start)
+                time.sleep(measure_interval_s)
+            fgt_close()
 
-        fgt_close()
+        if nb_controller == 2:
+            fgt_init()
+            t_start = time.time()
+            t_end = time.time() + duration_s
+            while time.time() < t_end:
+                try:
+                    measurement_p1 = fgt_get_pressure(
+                        pressureInfoArray[0].indexID)
+                    self.measure_p1.append(measurement_p1)
+                except IndexError as e:
+                    print('WARNING: Cannot read pressure on channel 0')
+                try:
+                    measurement_p2 = fgt_get_pressure(
+                        pressureInfoArray[1].indexID)
+                    self.measure_p2.append(measurement_p2)
+                except IndexError as e:
+                    print('WARNING: Cannot read pressure on channel 1')
+
+                print('Current p1 {:0.2f} mbar | p2 {:0.2f} mbar | Time:{:0.2f}'.format(
+                    measurement_p1, measurement_p2, time.time()-t_start))
+                self.times_list.append(time.time()-t_start)
+                time.sleep(measure_interval_s)
+            fgt_close()
 
         # Open the CSV file for writing
-        headers = ['s', 'mbar']
+        if nb_controller == 1:
+            headers = ['s', 'mbar']
+        elif nb_controller == 2:
+            headers = ['s', 'mbar_p1', 'mbar_p2']
         with open(measurements_directory, 'w', newline='') as csvfile:
             # Create a CSV writer
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(headers)
         # Write the data from the arrays to the CSV file
-            for i in range(len(self.times_list)):
-                csv_writer.writerow(
-                    [self.times_list[i], self.measured_list[i]])
+            if nb_controller == 1:
+                for i in range(len(self.times_list)):
+                    csv_writer.writerow(
+                        [self.times_list[i], self.measure_p1[i]])
+            elif nb_controller == 2:
+                for i in range(len(self.times_list)):
+                    csv_writer.writerow(
+                        [self.times_list[i], self.measure_p1[i], self.measure_p2[i]])
 
 
 if __name__ == "__main__":

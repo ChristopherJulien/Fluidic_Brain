@@ -15,24 +15,20 @@ sls_interval = "\x00\x64"  # recording interaval 100ms
 
 # Pressure Parameters
 nb_controllers = 1
-plateau_time = 10
+plateau_time = 5
+
 start_p1 = 0
 max_p1 = 30
-min_p1 = 0
+min_p1 = -30
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 nb_steps1 = 30
-
-# start_p2 = 0
-# end_p2 = 3
-# min_p2 = 0
-# nb_steps2 = 3     # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 
 
 # Saleae Parameters
 buffer_size_megabytes = 16000
 analog_sample_rate = 781250
 
-# Document Parameters
+# Documenting Parameters
 Lstring = ''
 IDstring = ''
 check_valve_type = ''
@@ -41,7 +37,7 @@ vl_init = ''
 # exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
 # exp_folder = ('A_II_plateau_time_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
 # exp_folder = ('TEST_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-exp_folder = 'Test_2_Controller'
+exp_folder = 'Test_1_Controller'
 # exp_folder = ('NO-FLOW-SLS-CALIBRATION'.format(
 # exp_folder = ('FS-NoFlow-Threaded-plateau_time{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:f}'.format(
 #     plateau_time, start_p1, max_p1, min_p1, nb_steps1))
@@ -84,7 +80,7 @@ print('Total Time: '+total_time)
 
 # Create a dictionary with all the parameters
 parameters_dict = {"calibration_flag": sls_calibration_flag, "nb_controllers": nb_controllers, "IDstring": IDstring, "Lstring": Lstring,
-                   "check_valve_type": check_valve_type, "plateau_time": plateau_time, "start_p1": start_p1, "max_p1": max_p1, "min_p1": min_p1, "nb_steps1": nb_steps1, "h_init_cm": h_init_cm, "vl_init_mL": vl_init,
+                   "check_valve_type": check_valve_type, "plateau_time": plateau_time, "start_p1": start_p1, "start_p2": None, "max_p1": max_p1, "max_p2": None, "min_p1": min_p1, "min_p2": None, "nb_steps1": nb_steps1, "nb_steps2": None, "h_init_cm": h_init_cm, "vl_init_mL": vl_init,
                    "exp_name": exp_folder, "calibration_subfolder": calibration_subfolder, "voltages_subfolder": voltages_subfolder, 'voltages_analog_subfolder': voltages_analog_subfolder, 'flow_subfolder': flow_subfolder, 'pressure_ramp_subfolder': pressure_ramp_subfolder, 'micro_flow_flg_subfolder': micro_flow_flg_subfolder,
                    "total_seconds": total_seconds, "total_time": total_time, "calibration_time_s": calibration_time_s, 'master_folder_path': master_folder_path, 'buffer_size_megabytes': buffer_size_megabytes, 'analog_sample_rate': analog_sample_rate, 'sls_interval': sls_interval}
 

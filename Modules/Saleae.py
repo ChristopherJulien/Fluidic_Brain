@@ -140,4 +140,3 @@ if __name__ == "__main__":
     print("MultiScripting Saleae")
     param_dict = json.loads(sys.argv[1])
     process_saleae(param_dict)
-    print('Please waite for Saleae to finish compressing saved data')
