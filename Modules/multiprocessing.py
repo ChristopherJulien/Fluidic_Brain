@@ -7,33 +7,43 @@ import sys
 import json
 import os
 
-# Test Parameters
+# Calibration
 sls_calibration_flag = False
-nb_controllers = 1
-Lstring = '30cm'
-IDstring = '3-16'
-check_valve_type = 'cv3'
-h_init_cm = '8.5cm'
-vl_init = '1000mL'
 
 # SLS Parameters
 sls_interval = "\x00\x64"  # recording interaval 100ms
 
 # Pressure Parameters
-plateau_time = 3
+nb_controllers = 1
+plateau_time = 10
 Pstart = 0
-Pmax = 10
-Pmin = -Pmax
+Pmax = 3
+Pmin = 0
 # step_size = int((Pmax - Pmin) / 20.)
-step_size = 10
+step_size = 3
 
+# Saleae Parameters
+buffer_size_megabytes = 16000
+analog_sample_rate = 781250
+
+# Document Parameters
+Lstring = ''
+IDstring = ''
+check_valve_type = ''
+h_init_cm = ''
+vl_init = '1'
 # exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
 # exp_folder = ('A_II_plateau_time_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
 # exp_folder = ('TEST_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-exp_folder = ('CV-NOMRALTUBE-T-1_8-30cm-GLYCEROL-plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(
+# exp_folder = ('NO-FLOW-SLS-CALIBRATION'.format(
+exp_folder = ('FS-NoFlow-Threaded-plateau_time{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:f}'.format(
     plateau_time, Pstart, Pmax, Pmin, step_size))
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # Folder names and paths
+master_folder_path = os.path.abspath(os.getcwd()) + r"/"+exp_folder
 calibration_time_s = 30
 calibration_subfolder = r'calibration_saleae'
 voltages_subfolder = r'voltages_saleae'
@@ -42,14 +52,6 @@ flow_subfolder = r'flow_sls'
 pressure_ramp_subfolder = r'pressure_ramp_flg'
 micro_flow_flg_subfolder = r'micro_flow_flg'
 
-# Saleas Parameters
-buffer_size_megabytes = 15000
-analog_sample_rate = 781250
-# analog_sample_rate = 3125000
-
-# Setup Folder
-master_folder_path = os.path.abspath(os.getcwd()) + r"/"+exp_folder
-
 # Check and create each subfolder
 for subfolder_path in [exp_folder]:
     if not os.path.exists(exp_folder+'/'+subfolder_path):
@@ -57,7 +59,6 @@ for subfolder_path in [exp_folder]:
         print(f"Subfolder {subfolder_path} created successfully.")
     else:
         print(f"Subfolder {subfolder_path} already exists.")
-
 
 dict_name = r"\parameters.json"
 path_to_save_parameters = master_folder_path + dict_name
@@ -74,6 +75,7 @@ total_mins = total_seconds // 60
 total_time = '{:d}mins{:d}s'.format(total_mins, total_seconds % 60)
 print('Total Time: '+total_time)
 
+# Create a dictionary with all the parameters
 parameters_dict = {"calibration_flag": sls_calibration_flag, "nb_controllers": nb_controllers, "IDstring": IDstring, "Lstring": Lstring,
                    "check_valve_type": check_valve_type, "plateau_time": plateau_time, "Pstart": Pstart, "Pmax": Pmax, "Pmin": Pmin, "step_size": step_size, "h_init_cm": h_init_cm, "vl_init_mL": vl_init,
                    "exp_name": exp_folder, "calibration_subfolder": calibration_subfolder, "voltages_subfolder": voltages_subfolder, 'voltages_analog_subfolder': voltages_analog_subfolder, 'flow_subfolder': flow_subfolder, 'pressure_ramp_subfolder': pressure_ramp_subfolder, 'micro_flow_flg_subfolder': micro_flow_flg_subfolder,

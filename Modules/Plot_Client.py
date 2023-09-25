@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from natsort import natsorted
 import pickle
+import json
+import addcopyfighandler
 
 SLS = 1
 FLG = 2
@@ -22,7 +24,6 @@ channel_dict = {
     "Channel 1": ('Channel 1', 'brown', '7kPa', 0.057),
     "Channel 2": ('Channel 2', 'red',  '2kPa', 0.2),
     "Channel 3": ('Channel 3', 'orange', 'none', 'none'),
-
 }
 
 
@@ -300,7 +301,7 @@ class Plot:
         # plt.savefig(save_path)
         # print("Plot saved: {}".format(save_path))
 
-    def channels_vs_time(self, save=None):
+    def channels_vs_time(self, save=None, moving_average=0):
         try:
             # Load data from CSV using pandas
             filepath = self.folder_path + r'\voltages_saleae\analog_voltages\analog.csv'
@@ -312,6 +313,16 @@ class Plot:
             channel_0 = df[channel_dict['Channel 0'][0]]
             channel_1 = df[channel_dict['Channel 1'][0]]
             channel_2 = df[channel_dict['Channel 2'][0]]
+
+            # Apply moving average filter
+            if moving_average > 0:
+                channel_0 = channel_0.rolling(
+                    window=moving_average).mean()
+                channel_1 = channel_1.rolling(
+                    window=moving_average).mean()
+                channel_2 = channel_2.rolling(
+                    window=moving_average).mean()
+                time = time.rolling(window=moving_average).mean()
 
             # Create the plot
             plt.figure(figsize=(10, 6))
@@ -389,35 +400,63 @@ class Plot:
         df.to_csv(pressure_path, index=False)
         print(f"New pressures.csv created successfully.")
 
-    def pressure_vs_time(self, save=None):
+    def pressure_vs_time(self, save=None, moving_average=0):
         pressure_path = self.folder_path + \
             r'\voltages_saleae\analog_pressures\pressures.csv'
         df = pd.read_csv(pressure_path)
 
-        plt.figure(figsize=(10, 6))
-        plt.plot(df['s'], df['25kPa'], label='25kPa', color='black')
-        plt.plot(df['s'], df['2kPa'], label='2kPa', color='red')
-        plt.plot(df['s'], df['7kPa'], label='7kPa', color='brown')
+        if moving_average > 0:
+            df['25kPa'] = df['25kPa'].rolling(window=moving_average).mean()
+            df['2kPa'] = df['2kPa'].rolling(window=moving_average).mean()
+            df['7kPa'] = df['7kPa'].rolling(window=moving_average).mean()
+            df['s'] = df['s'].rolling(window=moving_average).mean()
+
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
+        line_25, = ax.plot(df['s'], df['25kPa'], lw=2,
+                           label='25kPa', color='black')
+        line_7, = ax.plot(df['s'], df['7kPa'], lw=2,
+                          label='7kPa', color='brown')
+        line_2, = ax.plot(df['s'], df['2kPa'], lw=2, label='2kPa', color='red')
+        leg = ax.legend(fancybox=True, shadow=True)
+
+        lines = [line_25, line_7, line_2]
+        lined = {}
+
+        for legline, origline in zip(leg.get_lines(), lines):
+            legline.set_picker(True)
+            lined[legline] = origline
+
+        def on_pick(event):
+            print('Picked')
+            legline = event.artist
+            origline = lined[legline]
+            visible = not origline.get_visible()
+            origline.set_visible(visible)
+            legline.set_alpha(1.0 if visible else 0.2)
+            fig.canvas.draw()
+        fig.canvas.mpl_connect('pick_event', on_pick)
 
         plt.autoscale(axis='y')
         plt.xlabel('Time [s]', fontsize=20)
         plt.ylabel('Pressure [mbar]', fontsize=20)
         plt.title('Pressure vs Time')
         plt.tick_params(axis='both', which='major', labelsize=16)
-
-        # Customize the spines
-        ax = plt.gca()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_linewidth(0.5)
-        ax.spines['bottom'].set_linewidth(0.5)
-        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        # Customize the spines
+        # ax = plt.gca()
+        # ax.spines['top'].set_visible(False)
+        # ax.spines['right'].set_visible(False)
+        # ax.spines['left'].set_linewidth(0.5)
+        # ax.spines['bottom'].set_linewidth(0.5)
+        # plt.grid(color='gray', linestyle='--', linewidth=0.5)
 
         # Customize the legend
-        plt.rcParams['figure.autolayout'] = True
-        plt.rcParams['font.size'] = 9
-        plt.rcParams['legend.edgecolor'] = '1'
-        plt.legend(fontsize=12, frameon=False)
+        # plt.rcParams['figure.autolayout'] = True
+        # plt.rcParams['font.size'] = 9
+        # plt.rcParams['legend.edgecolor'] = '1'
+        # plt.legend(fontsize=12, frameon=False)
 
         # Save the plot
         if save:
@@ -428,14 +467,44 @@ class Plot:
 
         plt.show()
 
-    def measured_pressure_vs_time(self, save=None):
+    def set_pressure_vs_time(self, save=None):
+        set_pressure_path = self.folder_path + \
+            r'\pressure_ramp_flg\push_pull\ramp.json'
+
+        with open(set_pressure_path) as json_file:
+            data = json.load(json_file)
+
+        times = data['times']
+        input_pressures = data['input_pressures']
+
+        time_pressure_pairs = list(zip(times, input_pressures))
+
+        for time, pressures in time_pressure_pairs:
+            print(f"Time: {time}, Pressures: {pressures}")
+
+        fig, ax = plt.subplots(1, 1, figsize=[2.5, 2.5])
+        ax.plot(times, input_pressures, label="ctrl 1", marker='o',
+                color=[0, 0, 0])
+        ax.legend()
+        ax.set_title(f"Inputs - {self.exp_name}")
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Input pressures (mbar)")
+        plt.tight_layout()
+        if save:
+            fig.savefig(f'{self.folder_path}/pressure_inputs.png', dpi=300)
+        plt.show()
+
+    def measured_pressure_vs_time(self, save=None, moving_average=0, zoomed=False):
         measured_pressure_path = self.folder_path + \
             r'\pressure_ramp_flg\pressure_measurements.csv'
         df = pd.read_csv(measured_pressure_path)
 
-        plt.figure(figsize=(10, 6))
-        plt.plot(df['s'], df['mbar'], color='blue')
+        if moving_average > 0:
+            df['mbar'] = df['mbar'].rolling(window=moving_average).mean()
+            df['s'] = df['s'].rolling(window=moving_average).mean()
 
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
+        plt.plot(df['s'], df['mbar'], color='blue')
         plt.autoscale(axis='y')
         plt.xlabel('Time [s]', fontsize=20)
         plt.ylabel('Pressure [mbar]', fontsize=20)
@@ -456,27 +525,69 @@ class Plot:
         plt.rcParams['legend.edgecolor'] = '1'
         plt.legend(fontsize=12, frameon=False)
 
+        if zoomed:
+            figzoom, axzoom = plt.subplots(figsize=(9.0, 3.0))
+            axzoom.set(xlim=(0.0, 75), ylim=(0.0, 0.1),
+                       autoscale_on=False, title='Zoom window')
+            axzoom.plot(df['s'], df['mbar'], color='blue')
+            axzoom.autoscale(axis='y')
+            axzoom.legend(fontsize=8, frameon=False)
+            axzoom.set_xlabel("Time [s]", fontsize=20)
+            axzoom.set_ylabel("Pressure [mbar]", fontsize=20)
+            axzoom.tick_params(axis='both', which='major', labelsize=16)
+            axzoom.spines['top'].set_visible(False)
+            axzoom.spines['right'].set_visible(False)
+
+            def on_press(event):
+                if event.button != 1:
+                    return
+                x, y = event.xdata, event.ydata
+                axzoom.set_xlim(x - 35, x + 35)
+                axzoom.set_ylim(y - 0.03, y + 0.03)
+                axzoom.tick_params(axis='both', which='major', labelsize=16)
+                figzoom.canvas.draw()
+                print("Zoomed")
+
+            fig.canvas.mpl_connect('button_press_event', on_press)
+
         # Save the plot
         if save:
             save_directory = self.exp_name
             save_path = os.path.join(
                 save_directory, f"measured_pressures_vs_time_{self.exp_name}.png")
             plt.savefig(save_path)
+            if zoomed:
+                save_path = os.path.join(
+                    save_directory, f"measured_pressures_vs_time_zoomed_{self.exp_name}.png")
+                figzoom.savefig(save_path)
 
         plt.show()
 
-    def sls_flow_measurements(self, folder_path, save=None):
-        flow_path = folder_path + r'\sls_flow_measurments.csv'
+    def on_press(event, axzoom, figzoom):
+        if event.button != 1:
+            return
+        x, y = event.xdata, event.ydata
+        x, y = event.xdata, event.ydata
+        axzoom.set_xlim(x - 0.1, x + 0.1)
+        axzoom.set_ylim(y - 0.1, y + 0.1)
+        figzoom.canvas.draw()
+
+    def sls_flow_measurements(self, save=None, moving_average=0, zoomed=False):
+        flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
         # flow_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\testsls_flow_measurments.csv'
         print("Plotting Flow Rate Over Time")
         # Set the figsize to the screen aspect ratio
-        fig, ax = plt.subplots(1, 1, figsize=(16, 9))
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
 
         df = pd.read_csv(flow_path)
-        print(df)
+
+        window_size = moving_average
+        if window_size > 0:
+            df['mL/min'] = df['mL/min'].rolling(window=window_size).mean()
+            df['s'] = df['s'].rolling(window=window_size).mean()
 
         mL_min = df['mL/min'].tolist()
-        s = df['ms'].tolist()
+        s = df['s'].tolist()
 
         ax.plot(s, mL_min, label='q measured mL/min')
         ax.autoscale(axis='y')
@@ -492,23 +603,102 @@ class Plot:
         plt.rcParams['legend.edgecolor'] = '1'
         # Decrease the fontsize value to make the legend smaller
         plt.legend(fontsize=12, frameon=False)
+        plt.title('SLS Flow vs Time')
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        if zoomed:
+            figzoom, axzoom = plt.subplots(figsize=(9.0, 3.0))
+            axzoom.set(xlim=(0.0, 50), ylim=(0.0, 0.1),
+                       autoscale_on=False, title='Zoom window')
+            axzoom.plot(s, mL_min, label='q measured mL/min')
+            axzoom.autoscale(axis='y')
+            axzoom.legend(fontsize=8, frameon=False)
+            axzoom.set_xlabel("Time [s]", fontsize=20)
+            axzoom.set_ylabel("Flow [mL/min]", fontsize=20)
+            axzoom.tick_params(axis='both', which='major', labelsize=16)
+            axzoom.spines['top'].set_visible(False)
+            axzoom.spines['right'].set_visible(False)
+
+            def on_press(event):
+
+                if event.button != 1:
+                    return
+                x, y = event.xdata, event.ydata
+                axzoom.set_xlim(x - 25, x + 25)
+                axzoom.set_ylim(y - 0.03, y + 0.03)
+                axzoom.tick_params(axis='both', which='major', labelsize=16)
+                figzoom.canvas.draw()
+                print("Zoomed")
+
+            fig.canvas.mpl_connect('button_press_event', on_press)
+
+        if save:
+            fig.savefig(
+                f'{self.folder_path}/sls_flow_measurements.png', dpi=300)
+            if zoomed:
+                figzoom.savefig(
+                    f'{self.folder_path}/sls_flow_measurements_zoomed.png', dpi=300)
 
         plt.show()
 
+    def flow_vs_pressure(self, save=None, flow_moving_average=0, pressure_moving_average=0, pressure_sensor_value=None):
+        flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
+        pressure_path = self.folder_path + \
+            r'\voltages_saleae\analog_pressures\pressures.csv'
 
-# def volt_to_mbar(sensor, volt_signal, volt_source):
-#     '''
-#     Convert MXP sensor voltage to differential pressure.
-#     No error or zero-offset included. Values outside of [0.5,4.5]V
-#     are excluded (returned as np.nan).
-#     '''
-#     cdict = {'25kPa': 0.018,
-#              '7kPa': 0.057,
-#              '2kPa': 0.2}
-#     pressure = (volt_signal/volt_source - 0.5)/cdict[sensor]*10
-#     pressure [volt_signal < 0.5] = np.nan
-#     pressure [volt_signal > 4.5] = np.nan
-#     return pressure
+        df_flow = pd.read_csv(flow_path)
+        df_pressure = pd.read_csv(pressure_path)
+
+        # Get the corresponding values
+        flow_mL_min = df_flow['mL/min'].tolist()
+        flow_s = df_flow['s'].tolist()
+
+        pressure_sensor_value_kPa = str(pressure_sensor_value) + 'kPa'
+        pressure_mbar = df_pressure[pressure_sensor_value_kPa].tolist()
+        pressure_s = df_pressure['s'].tolist()
+
+        if flow_moving_average > 0:
+            flow_mL_min = df_flow['mL/min'].rolling(
+                window=flow_moving_average).mean()
+            flow_s = df_flow['s'].rolling(window=flow_moving_average).mean()
+
+        if pressure_moving_average > 0:
+            pressure_mbar = df_pressure[pressure_sensor_value_kPa].rolling(
+                window=pressure_moving_average).mean()
+            pressure_s = df_pressure['s'].rolling(
+                window=pressure_moving_average).mean()
+
+        # Create a figure and axis
+        fig, ax1 = plt.subplots(figsize=(12.0, 6.0))
+
+        # Plot pressure vs. time on the left y-axis (ax1)
+        ax1.plot(pressure_s, pressure_mbar,
+                 'b-', label=str(pressure_sensor_value)+'0 mbar Sensor')
+        ax1.set_xlabel('Time')
+        ax1.set_ylabel('Pressure [mbar]', color='blue')
+        ax1.tick_params('y', colors='blue')
+
+        # Create a secondary y-axis (ax2) on the right for flow
+        ax2 = ax1.twinx()
+        ax2.plot(flow_s, flow_mL_min,
+                 'r-', label='mL/min')
+        ax2.set_ylabel('Flow [mL/min]', color='red')
+        ax2.tick_params('y', colors='red')
+
+        # # Add legends
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.05, 0.9))
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        # # Display the plot
+        plt.title('Pressure and Flow vs. Time')
+
+        if (save):
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"flow_vs_pressure_{pressure_sensor_value}0mbar.png")
+            plt.savefig(save_path)
+        plt.show()
+
 
 if __name__ == "__main__":
     # folder_path_7kp = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Pressure_Ramp_7kp_p_start_0_p_max_70_p_min0_step_size_5'
@@ -517,9 +707,14 @@ if __name__ == "__main__":
     # plot.create_pressure_vs_time(folder_path_7kp)
     # plot.pressure_vs_time(save=True)
 
-    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\CV-NORMALTUBE-GLYCEROL-plateau_time_s_30_p_start_0_p_max_600_p_min-600_step_size_200'
-    plot = Plot(folder_path=folder_path)
-    plot.channels_vs_time(save=True)
+    folder_path = r'FS-NoFlow-Threaded-plateau_time10_p_start_0_p_max_3_p_min0_step_size_3.000000'
+    plot = Plot(folder_path=folder_path, SLS1500_flag=False)
+
+    plot.set_pressure_vs_time(save=True)
+    plot.measured_pressure_vs_time(save=True, moving_average=100, zoomed=False)
+    plot.sls_flow_measurements(save=False, moving_average=5, zoomed=False)
+    plot.channels_vs_time(save=True, moving_average=100)
     plot.create_pressure_vs_time(folder_path)
-    plot.pressure_vs_time(save=True)
-    plot.measured_pressure_vs_time(save=True)
+    plot.pressure_vs_time(save=False, moving_average=50)
+    plot.flow_vs_pressure(save=True, flow_moving_average=50, pressure_moving_average=50,
+                          pressure_sensor_value=7)

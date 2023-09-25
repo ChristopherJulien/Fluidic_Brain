@@ -33,4 +33,5 @@ def on_pick(event):
 
 
 fig.canvas.mpl_connect('pick_event', on_pick)
+
 plt.show()
