@@ -243,32 +243,32 @@ class PP_Pressure:
         nb_controllers = dict["nb_controllers"]
         exp_folder = dict["exp_name"]
         plateau_time = dict["plateau_time"]
-        max_p = dict["Pmax"]
-        min_p = dict["Pmin"]
-        start_p = dict["Pstart"]
-        step_size = dict["step_size"]
+        max_p1 = dict["max_p1"]
+        min_p1 = dict["min_p1"]
+        start_p = dict["start_p1"]
+        nb_steps1 = dict["nb_steps1"]
         pressure_ramp_subfolder = dict["pressure_ramp_subfolder"]
 
         ramp = PP_Pressure(nb_controllers, exp_folder)
         with Pressure_Controller(nb_controllers=ramp.nb_controllers):
 
-            nstep_up1 = int((max_p - start_p)/step_size)+1
-            max_p = start_p + step_size*(nstep_up1-1)
-            nstep_down1 = int((max_p - min_p)/step_size)
-            min_p = max_p - step_size*(nstep_down1)
+            nstep_up1 = int((max_p1 - start_p)/nb_steps1)+1
+            max_p1 = start_p + nb_steps1*(nstep_up1-1)
+            nstep_down1 = int((max_p1 - min_p1)/nb_steps1)
+            min_p1 = max_p1 - nb_steps1*(nstep_down1)
             nstep_up2 = - nstep_up1 + nstep_down1+1
 
-            # # print(max_p, min_p, nstep_up2)
+            # # print(max_p1, min_p1, nstep_up2)
             # nstep_down = 1
             # nstep_up2 = 1
             ramp.perform_one_ramp_one_controller(
-                start_p=start_p, end_p=max_p, nb_steps=nstep_up1, plateau_time=plateau_time
+                start_p=start_p, end_p=max_p1, nb_steps=nstep_up1, plateau_time=plateau_time
             )
             ramp.perform_one_ramp_one_controller(
-                start_p=max_p-step_size, end_p=min_p, nb_steps=nstep_down1, plateau_time=plateau_time
+                start_p=max_p1-nb_steps1, end_p=min_p1, nb_steps=nstep_down1, plateau_time=plateau_time
             )
             ramp.perform_one_ramp_one_controller(
-                start_p=min_p + step_size, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
+                start_p=min_p1 + nb_steps1, end_p=0, nb_steps=nstep_up2, plateau_time=plateau_time
             )
             ramp.create_json_file(exp_folder+'/'+pressure_ramp_subfolder)
             print(ramp.inputs_list)
