@@ -57,7 +57,7 @@ vl_init = ''
 # exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
 # exp_folder = ('A_II_plateau_time_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
 # exp_folder = ('TEST_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-exp_folder = 'Test_21_Controller'
+exp_folder = 'Test_zigzag_Controller'
 # exp_folder = ('NO-FLOW-SLS-CALIBRATION'.format(
 # exp_folder = ('FS-NoFlow-Threaded-plateau_time{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:f}'.format(
 #     plateau_time, start_p1, max_p1, min_p1, nb_steps1))
@@ -87,16 +87,27 @@ dict_name = r"\parameters.json"
 path_to_save_parameters = master_folder_path + dict_name
 print(f"Path to save parameters: {path_to_save_parameters}")
 
-# Calculate total time
-nstep_up1 = int((max_p1 - start_p1)/nb_steps1)+1
-max_p = start_p1 + nb_steps1*(nstep_up1-1)
-nstep_down1 = int((max_p - min_p1)/nb_steps1)
-min_p = max_p - nb_steps1*(nstep_down1)
-nstep_up2 = - nstep_up1 + nstep_down1+1
-total_seconds = plateau_time * (nstep_up1 + nstep_down1 + nstep_up2)
-total_mins = total_seconds // 60
-total_time = '{:d}mins{:d}s'.format(total_mins, total_seconds % 60)
-print('Total Time: '+total_time)
+# Calculate total time in nb controller =1
+if nb_controllers == 1:
+    nstep_up1 = int((max_p1 - start_p1)/nb_steps1)+1
+    max_p = start_p1 + nb_steps1*(nstep_up1-1)
+    nstep_down1 = int((max_p - min_p1)/nb_steps1)
+    min_p = max_p - nb_steps1*(nstep_down1)
+    nstep_up2 = - nstep_up1 + nstep_down1+1
+    total_seconds = plateau_time * (nstep_up1 + nstep_down1 + nstep_up2)
+    total_mins = total_seconds // 60
+    total_time = '{:d}mins{:d}s'.format(total_mins, total_seconds % 60)
+    print('Total Time: '+total_time)
+
+elif nb_controllers == 2:
+    possible_p1 = ((max_p1-start_p1)/nb_steps1) + 1
+    possible_p2 = ((max_p2-start_p2)/nb_steps2) + 1
+    all_steps = possible_p1*possible_p2
+    total_seconds = all_steps*plateau_time
+    total_mins = total_seconds // 60
+    total_time = '{:.0f}mins{:d}s'.format(total_mins, int(total_seconds) % 60)
+    print('Total Time: '+total_time)
+
 
 # Create a dictionary with all the parameters
 parameters_dict = {"calibration_flag": sls_calibration_flag, "nb_controllers": nb_controllers, "IDstring": IDstring, "Lstring": Lstring,

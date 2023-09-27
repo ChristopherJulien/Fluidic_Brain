@@ -13,6 +13,7 @@ from natsort import natsorted
 import pickle
 import json
 import addcopyfighandler
+from matplotlib.colors import Normalize
 
 SLS = 1
 FLG = 2
@@ -573,6 +574,53 @@ class Plot:
 
         plt.show()
 
+    def double_pressure_controller_command_overview(self, save=None, moving_average=0, nb_controllers=2):
+        assert nb_controllers == 2, "Number of controllers must be equal to 2"
+
+        measured_pressure_path = os.path.join(
+            self.folder_path, 'pressure_ramp_flg', 'pressure_measurements.csv')
+        df = pd.read_csv(measured_pressure_path)
+
+        if moving_average > 0 and nb_controllers == 2:
+            df['mbar_p1'] = df['mbar_p1'].rolling(window=moving_average).mean()
+            df['mbar_p2'] = df['mbar_p2'].rolling(window=moving_average).mean()
+            df['s'] = df['s'].rolling(window=moving_average).mean()
+
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
+
+        if nb_controllers == 2:
+            plt.scatter(df['mbar_p1'], df['mbar_p2'], c=df['s'],
+                        cmap='viridis', label='Pressure1 vs Pressure2')
+
+        plt.autoscale(axis='y')
+        plt.xlabel('Pressure Controller 1 [mbar]', fontsize=20)
+        plt.ylabel('Pressure Controller 2 [mbar]', fontsize=20)
+        plt.colorbar(label='Time [s]')
+        plt.title('Commanded vs Measured Pressure')
+        plt.tick_params(axis='both', which='major', labelsize=16)
+
+        # Customize the spines
+        ax = plt.gca()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_linewidth(0.5)
+        ax.spines['bottom'].set_linewidth(0.5)
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        # Customize the legend
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        plt.legend(fontsize=12, frameon=False)
+
+        if save:
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"commanded_vs_recorded_pressures_{self.exp_name}.png")
+            plt.savefig(save_path)
+
+        plt.show()
+
     def on_press(event, axzoom, figzoom):
         if event.button != 1:
             return
@@ -717,12 +765,14 @@ if __name__ == "__main__":
     # plot.create_pressure_vs_time(folder_path_7kp)
     # plot.pressure_vs_time(save=True)
 
-    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Test_21_Controller'
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Test_zigzag_Controller'
     plot = Plot(folder_path=folder_path, SLS1500_flag=False)
 
     # plot.set_pressure_vs_time(save=True)
-    plot.measured_pressure_vs_time(
-        save=True, moving_average=10, zoomed=False, nb_controllers=2)
+    plot.double_pressure_controller_command_overview(
+        save=False, moving_average=40, nb_controllers=2)
+    # plot.measured_pressure_vs_time(
+    #     save=True, moving_average=10, zoomed=False, nb_controllers=2)
     # plot.sls_flow_measurements(save=False, moving_average=5, zoomed=False)
     # plot.channels_vs_time(save=True, moving_average=100)
     # plot.create_pressure_vs_time(folder_path)
