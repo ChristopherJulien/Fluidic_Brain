@@ -7,6 +7,6 @@
 *.JPEG
 *.MOV
 *.JPG
-**/.DS_Store
-**.DS_Store
-
+/.DS_Store
+/tmp.drivedownload
+/tmp.driveupload
