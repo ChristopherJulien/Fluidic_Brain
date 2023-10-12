@@ -343,7 +343,7 @@ class Pressure_Controller:
             # print(ramp.inputs_list)
 
     def save_continuous_pressure(self, dict):
-        measure_interval_s = 0.05
+        measure_interval_s = 0.1
         assert measure_interval_s > 0.001
 
         duration_s = dict["total_seconds"]

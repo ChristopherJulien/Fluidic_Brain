@@ -131,9 +131,9 @@ class LogicCapture:
 
                 # Make a file system that copies this raw data and analyzes it to something different.
 
-                capture_filepath = os.path.join(
-                    output_dir, 'example_capture.sal')
-                capture.save_capture(filepath=capture_filepath)
+                # capture_filepath = os.path.join(
+                #     output_dir, 'example_capture.sal')
+                # capture.save_capture(filepath=capture_filepath)
 
 
 if __name__ == "__main__":

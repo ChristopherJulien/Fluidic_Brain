@@ -21,11 +21,18 @@ WATER = 3
 GLYCEROL = 4
 channel_dict = {
     "Time [s]": ('Time [s]', 'none', 's', 'none'),
-    "Channel 0": ('Channel 0', 'black', '25kPa', 0.018),
-    "Channel 1": ('Channel 1', 'brown', '7kPa', 0.057),
-    "Channel 2": ('Channel 2', 'red',  '2kPa', 0.2),
-    "Channel 3": ('Channel 3', 'orange', 'none', 'none'),
+    "Channel 0": ('Channel 0', 'black', '7kPa', 0.057),
+    "Channel 1": ('Channel 1', 'brown', '25kPa', 0.018),
+    "Channel 2": ('Channel 2', 'red',  '25kPa', 0.018),
+    "Channel 3": ('Channel 3', 'orange', '25kPa', 0.018)
 }
+# channel_dict = {
+#     "Time [s]": ('Time [s]', 'none', 's', 'none'),
+#     "Channel 0": ('Channel 0', 'black', '7kPa', 0.057),
+#     "Channel 1  ": ('Channel 1', 'brown', '25kPa', 0.018),
+#     "Channel 2": ('Channel 2', 'red',  '25kPa', 0.018),
+#     "Channel 3": ('Channel 3', 'orange', '25kPa', 0.018),
+# }
 
 
 def get_path_case(case, subcase):
@@ -46,11 +53,46 @@ def get_path_case(case, subcase):
 
 
 class Plot:
-    def __init__(self, folder_path, SLS1500_flag=None):
+    def __init__(self, folder_path):
         self.directory = os.path.dirname(os.path.abspath(__file__))
         self.folder_path = folder_path
-        self.SLS1500_flag = SLS1500_flag
         self.exp_name = os.path.basename(self.folder_path)
+
+        path_to_save_parameters = os.path.join(
+            self.folder_path, "parameters.json")
+        self.path_to_save_parameters = path_to_save_parameters
+        self.load_parameters()
+
+    def load_parameters(self):
+        with open(self.path_to_save_parameters, "r") as json_file:
+            data = json.load(json_file)
+        self.calibration_flag = data["calibration_flag"]
+        self.nb_controllers = data["nb_controllers"]
+        self.IDstring = data["IDstring"]
+        self.Lstring = data["Lstring"]
+        self.check_valve_type = data["check_valve_type"]
+        self.plateau_time = data["plateau_time"]
+        self.start_p1 = data["start_p1"]
+        self.start_p2 = data["start_p2"]
+        self.max_p1 = data["max_p1"]
+        self.max_p2 = data["max_p2"]
+        self.min_p1 = data["min_p1"]
+        self.min_p2 = data["min_p2"]
+        self.nb_steps1 = data["nb_steps1"]
+        self.nb_steps2 = data["nb_steps2"]
+        # self.h_init_cm = data["h_init_cm"]
+        # self.vl_init_mL = data["vl_init"]
+        self.micro_flag = data["micro_flag"]
+        self.exp_folder = data["exp_name"]
+        self.calibration_subfolder = data["calibration_subfolder"]
+        self.voltages_subfolder = data["voltages_subfolder"]
+        self.voltages_analog_subfolder = data["voltages_analog_subfolder"]
+        self.flow_subfolder = data["flow_subfolder"]
+        self.pressure_ramp_subfolder = data["pressure_ramp_subfolder"]
+        self.micro_flow_flg_subfolder = data["micro_flow_flg_subfolder"]
+        self.total_seconds = data["total_seconds"]
+        self.total_time = data["total_time"]
+        self.calibration_time_s = data["calibration_time_s"]
 
     def unpickle(self, filename):
         inputfile = open(filename, 'rb')
@@ -314,6 +356,7 @@ class Plot:
             channel_0 = df[channel_dict['Channel 0'][0]]
             channel_1 = df[channel_dict['Channel 1'][0]]
             channel_2 = df[channel_dict['Channel 2'][0]]
+            channel_3 = df[channel_dict['Channel 3'][0]]
 
             # Apply moving average filter
             if moving_average > 0:
@@ -322,6 +365,8 @@ class Plot:
                 channel_1 = channel_1.rolling(
                     window=moving_average).mean()
                 channel_2 = channel_2.rolling(
+                    window=moving_average).mean()
+                channel_3 = channel_3.rolling(
                     window=moving_average).mean()
                 time = time.rolling(window=moving_average).mean()
 
@@ -333,6 +378,8 @@ class Plot:
                 time, channel_1, label=channel_dict['Channel 1'][2], color=channel_dict['Channel 1'][1])
             plt.plot(
                 time, channel_2, label=channel_dict['Channel 2'][2], color=channel_dict['Channel 2'][1])
+            plt.plot(
+                time, channel_3, label=channel_dict['Channel 3'][2], color=channel_dict['Channel 3'][1])
 
             plt.autoscale(axis='y')
             plt.xlabel('Time [s]', fontsize=20)
@@ -370,7 +417,8 @@ class Plot:
         except Exception as e:
             print(f"Error: {e}")
 
-    def create_pressure_vs_time(self, folder_path):
+    def create_pressure_vs_time(self):
+        folder_path = self.folder_path
         analog_path = folder_path + r'/voltages_saleae/analog_voltages/analog.csv'
 
         os.makedirs(
@@ -575,6 +623,10 @@ class Plot:
         plt.show()
 
     def double_pressure_controller_command_overview(self, save=None, moving_average=0, nb_controllers=2):
+        if self.calibration_flag:
+            print("Calibration flag is set to True. Skipping double pressure plot.")
+            return
+
         assert nb_controllers == 2, "Number of controllers must be equal to 2"
 
         measured_pressure_path = os.path.join(
@@ -590,7 +642,7 @@ class Plot:
 
         if nb_controllers == 2:
             plt.scatter(df['mbar_p1'], df['mbar_p2'], c=df['s'],
-                        cmap='viridis', label='Pressure1 vs Pressure2')
+                        cmap='plasma')
 
         plt.autoscale(axis='y')
         plt.xlabel('Pressure Controller 1 [mbar]', fontsize=20)
@@ -699,16 +751,93 @@ class Plot:
 
         plt.show()
 
+    def flg_flow_measurements(self, save=None, moving_average=0, zoomed=False):
+        flow_path = self.folder_path + r'\micro_flow_flg\micro_flow.csv'
+        print("Plotting Flow Rate Over Time")
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
+
+        df = pd.read_csv(flow_path)
+        window_size = moving_average
+        if window_size > 0:
+            df['uL/min'] = df['uL/min'].rolling(window=window_size).mean()
+            df['s'] = df['s'].rolling(window=window_size).mean()
+
+        ul_min = df['uL/min'].tolist()
+        s = df['s'].tolist()
+
+        ax.plot(s, ul_min, label='q measured uL/min')
+        ax.autoscale(axis='y')
+        ax.legend(fontsize=8, frameon=False)
+        ax.set_xlabel("Time [s]", fontsize=20)
+        ax.set_ylabel("Flow [uL/min]", fontsize=20)
+        ax.tick_params(axis='both', which='major', labelsize=16)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        # Decrease the fontsize value to make the legend smaller
+        plt.legend(fontsize=12, frameon=False)
+        plt.title('FLG Flow vs Time')
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        if zoomed:
+            figzoom, axzoom = plt.subplots(figsize=(9.0, 3.0))
+            axzoom.set(xlim=(0.0, 50), ylim=(0.0, 0.1),
+                       autoscale_on=False, title='Zoom window')
+            axzoom.plot(s, ul_min, label='q measured uL/min')
+            axzoom.autoscale(axis='y')
+            axzoom.legend(fontsize=8, frameon=False)
+            axzoom.set_xlabel("Time [s]", fontsize=20)
+            axzoom.set_ylabel("Flow [uL/min]", fontsize=20)
+            axzoom.tick_params(axis='both', which='major', labelsize=16)
+            axzoom.spines['top'].set_visible(False)
+            axzoom.spines['right'].set_visible(False)
+
+            def on_press(event):
+
+                if event.button != 1:
+                    return
+                x, y = event.xdata, event.ydata
+                axzoom.set_xlim(x - 25, x + 25)
+                axzoom.set_ylim(y - 0.03, y + 0.03)
+                axzoom.tick_params(axis='both', which='major', labelsize=16)
+                figzoom.canvas.draw()
+                print("Zoomed")
+
+            fig.canvas.mpl_connect('button_press_event', on_press)
+
+        if save:
+            fig.savefig(
+                f'{self.folder_path}/flg_flow_measurements.png', dpi=300)
+            if zoomed:
+                figzoom.savefig(
+                    f'{self.folder_path}/flg_flow_measurements_zoomed.png', dpi=300)
+
+        plt.show()
+
     def flow_vs_pressure(self, save=None, flow_moving_average=0, pressure_moving_average=0, pressure_sensor_value=None):
-        flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
+        if self.micro_flag:
+            flow_path = self.folder_path + r'\micro_flow_flg\micro_flow.csv'
+        else:
+            flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
+
         pressure_path = self.folder_path + \
             r'\voltages_saleae\analog_pressures\pressures.csv'
 
         df_flow = pd.read_csv(flow_path)
         df_pressure = pd.read_csv(pressure_path)
 
+        cutoff_time_s = self.total_seconds
+        df_flow = df_flow[df_flow['s'] <= cutoff_time_s]
+        df_pressure = df_pressure[df_pressure['s'] <= cutoff_time_s]
+
         # Get the corresponding values
-        flow_mL_min = df_flow['mL/min'].tolist()
+        if self.micro_flag:
+            flow = df_flow['uL/min'].tolist()
+        else:
+            flow = df_flow['mL/min'].tolist()
         flow_s = df_flow['s'].tolist()
 
         pressure_sensor_value_kPa = str(pressure_sensor_value) + 'kPa'
@@ -716,9 +845,12 @@ class Plot:
         pressure_s = df_pressure['s'].tolist()
 
         if flow_moving_average > 0:
-            flow_mL_min = df_flow['mL/min'].rolling(
-                window=flow_moving_average).mean()
-            flow_s = df_flow['s'].rolling(window=flow_moving_average).mean()
+            if self.micro_flag:
+                flow = df_flow['uL/min'].rolling(
+                    window=flow_moving_average).mean()
+            else:
+                flow = df_flow['mL/min'].rolling(
+                    window=flow_moving_average).mean()
 
         if pressure_moving_average > 0:
             pressure_mbar = df_pressure[pressure_sensor_value_kPa].rolling(
@@ -726,26 +858,32 @@ class Plot:
             pressure_s = df_pressure['s'].rolling(
                 window=pressure_moving_average).mean()
 
+        interpolated_pressure = np.interp(flow_s, pressure_s, pressure_mbar)
+
         # Create a figure and axis
         fig, ax1 = plt.subplots(figsize=(12.0, 6.0))
 
         # Plot pressure vs. time on the left y-axis (ax1)
-        ax1.plot(pressure_s, pressure_mbar,
-                 'b-', label=str(pressure_sensor_value)+'0 mbar Sensor')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Pressure [mbar]', color='blue')
-        ax1.tick_params('y', colors='blue')
+        # ax1.plot(pressure_s, pressure_mbar,'b-', label=str(pressure_sensor_value)+'0 mbar Sensor')
+        ax1.scatter(interpolated_pressure, flow)
+        ax1.set_xlabel('Pressure [mbar]')
+        if self.micro_flag:
+            ax1.set_ylabel('Flow [uL/min]')
+        else:
+            ax1.set_ylabel('Flow [mL/min]')
+
+        # ax1.tick_params('y') # ax1.tick_params('y', colors='blue')
 
         # Create a secondary y-axis (ax2) on the right for flow
-        ax2 = ax1.twinx()
-        ax2.plot(flow_s, flow_mL_min,
-                 'r-', label='mL/min')
-        ax2.set_ylabel('Flow [mL/min]', color='red')
-        ax2.tick_params('y', colors='red')
+        # ax2 = ax1.twinx()
+        # ax2.plot(flow_s, flow_mL_min,
+        #          'r-', label='mL/min')
+        # ax2.set_ylabel('Flow [mL/min]', color='red')
+        # ax2.tick_params('y', colors='red')
 
         # # Add legends
-        ax1.legend(loc='upper left', bbox_to_anchor=(0.05, 0.9))
-        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+        # ax1.legend(loc='upper left', bbox_to_anchor=(0.05, 0.9))
+        # plt.grid(color='gray', linestyle='--', linewidth=0.5)
 
         # # Display the plot
         plt.title('Pressure and Flow vs. Time')
@@ -757,25 +895,113 @@ class Plot:
             plt.savefig(save_path)
         plt.show()
 
+    def flow_vs_pressure_time(self, save=None, flow_moving_average=0, pressure_moving_average=0, pressure_sensor_value=None):
+        fig, ax1 = plt.subplots(figsize=(12.0, 6.0))
+        ax2 = ax1.twinx()
+        if self.micro_flag:
+            flow_path = self.folder_path + r'\micro_flow_flg\micro_flow.csv'
+        else:
+            flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
+
+        pressure_path = self.folder_path + \
+            r'\voltages_saleae\analog_pressures\pressures.csv'
+        df_flow = pd.read_csv(flow_path)
+        df_pressure = pd.read_csv(pressure_path)
+
+        # Get the corresponding values
+        if self.micro_flag:
+            flow_mL_min = df_flow['uL/min'].tolist()
+            ax2.set_ylabel('Flow [uL/min]', color='red')
+        else:
+            flow_mL_min = df_flow['mL/min'].tolist()
+            ax2.set_ylabel('Flow [mL/min]', color='red')
+        flow_s = df_flow['s'].tolist()
+        pressure_sensor_value_kPa = str(pressure_sensor_value) + 'kPa'
+        pressure_mbar = df_pressure[pressure_sensor_value_kPa].tolist()
+        pressure_s = df_pressure['s'].tolist()
+        if flow_moving_average > 0:
+            if self.micro_flag:
+                flow_mL_min = df_flow['uL/min'].rolling(
+                    window=flow_moving_average).mean()
+            else:
+                flow_mL_min = df_flow['mL/min'].rolling(
+                    window=flow_moving_average).mean()
+            flow_s = df_flow['s'].rolling(window=flow_moving_average).mean()
+        if pressure_moving_average > 0:
+            pressure_mbar = df_pressure[pressure_sensor_value_kPa].rolling(
+                window=pressure_moving_average).mean()
+            pressure_s = df_pressure['s'].rolling(
+                window=pressure_moving_average).mean()
+        # Create a figure and axis
+
+        # Plot pressure vs. time on the left y-axis (ax1)
+        ax1.plot(pressure_s, pressure_mbar,
+                 'b-', label=str(pressure_sensor_value)+'0 mbar Sensor')
+        ax1.set_xlabel('Time [s]')
+        ax1.set_ylabel('Pressure [mbar]', color='blue')
+        ax1.tick_params('y', colors='blue')
+        # Create a secondary y-axis (ax2) on the right for flow
+
+        ax2.plot(flow_s, flow_mL_min,
+                 'r-', label='mL/min')
+        ax2.tick_params('y', colors='red')
+        # # Add legends
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.05, 0.9))
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+        # # Display the plot
+        plt.title('Pressure and Flow vs. Time')
+        if (save):
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"flow_vs_pressure_{pressure_sensor_value}0mbar.png")
+            plt.savefig(save_path)
+        plt.show()
+
+    def all_FLG_pressure_plots(self, save=None, moving_average=0):
+        if self.calibration_flag:
+            print("No FLG pressure plots for calibration folder")
+            return
+        self.set_pressure_vs_time(save=save)
+        if self.nb_controllers == 2:
+            self.double_pressure_controller_command_overview(
+                save=save, moving_average=moving_average, nb_controllers=self.nb_controllers)
+        if self.nb_controllers == 1:
+            self.measured_pressure_vs_time(
+                save=save, moving_average=moving_average, zoomed=False, nb_controllers=self.nb_controllers)
+
+    def flow_measurements(self, save=None, moving_average=0):
+        if self.micro_flag:
+            self.flg_flow_measurements(
+                save=save, moving_average=moving_average, zoomed=False)
+        else:
+            self.sls_flow_measurements(
+                save=save, moving_average=moving_average, zoomed=False)
+
+    def all_SAL_pressure_plots(self, save=None, moving_average=0, ):
+        self.channels_vs_time(save=save, moving_average=moving_average)
+        self.create_pressure_vs_time(self.folder_path)
+        self.pressure_vs_time(save=save, moving_average=moving_average)
+
 
 if __name__ == "__main__":
-    # folder_path_7kp = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Pressure_Ramp_7kp_p_start_0_p_max_70_p_min0_step_size_5'
-    # plot = Plot(folder_path=folder_path_7kp)
-    # plot.channels_vs_time(save=True)
-    # plot.create_pressure_vs_time(folder_path_7kp)
-    # plot.pressure_vs_time(save=True)
-
-    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Test_zigzag_Controller'
-    plot = Plot(folder_path=folder_path, SLS1500_flag=False)
+    folder_path = r'FNetwork-1_8_Diode2_pos'
+    plot = Plot(folder_path)
+    save = True
+    moving_average = 0
 
     # plot.set_pressure_vs_time(save=True)
     plot.double_pressure_controller_command_overview(
-        save=False, moving_average=40, nb_controllers=2)
-    # plot.measured_pressure_vs_time(
-    #     save=True, moving_average=10, zoomed=False, nb_controllers=2)
-    # plot.sls_flow_measurements(save=False, moving_average=5, zoomed=False)
-    # plot.channels_vs_time(save=True, moving_average=100)
-    # plot.create_pressure_vs_time(folder_path)
-    # plot.pressure_vs_time(save=False, moving_average=50)
-    # plot.flow_vs_pressure(save=True, flow_moving_average=50, pressure_moving_average=50,
-    #                       pressure_sensor_value=7)
+        save=True, moving_average=0, nb_controllers=2)
+    # # plot.measured_pressure_vs_time(
+    # # save=True, moving_average=0, zoomed=False, nb_controllers=1)  # do moving average of 1second or half a second
+
+    # plot.flow_measurements(save, moving_average=0)
+    plot.channels_vs_time(save, moving_average=40)
+    # plot.create_pressure_vs_time()
+    # plot.pressure_vs_time(save, moving_average=0)
+
+    # pressure_sensor_value = 2
+    # plot.flow_vs_pressure_time(
+    # save, flow_moving_average=10, pressure_moving_average=10, pressure_sensor_value=pressure_sensor_value)
+    # plot.flow_vs_pressure(save, flow_moving_average=0, pressure_moving_average=0,
+    #   pressure_sensor_value=pressure_sensor_value)  # make a color bar
