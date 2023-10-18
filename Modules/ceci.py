@@ -50,7 +50,6 @@ class Widget():
         print('Saleae Buffer Size: ', self.combobox_2_1.get())
         print('Saleae Sampling Rate: ', self.combobox_2_2.get())
         print('Saleae Device Id: ', self.entry_2.get())
-        print('Saleae Flow Rate: ', self.entry_2_2.get())
 
         print('Switch Fluigent: ', self.switch_3.get())
 
@@ -59,12 +58,12 @@ class Widget():
         print('Experiment Folder Name: ', self.entry_5_1.get())
         print('Export Directory: ', self.selected_directory.get())
         print('Capture Duration: ', self.entry_5.get())
-        duration = int(self.entry_5.get())
+        # duration = int(self.entry_5.get())
 
-        if duration > 0:
-            self.countdown(duration)
-            self.time_remaining.set(0)
-            self.progressbar_5.set(0)
+        # if duration > 0:
+        #     self.countdown(duration)
+        #     self.time_remaining.set(0)
+        #     self.progressbar_5.set(0)
 
     def switch_syringe_pump(self):
         # Define logic for Syringe Pump switch
@@ -107,8 +106,6 @@ class Widget():
         frames[1], values=['781250', '1562500', '3125000'], width=200)
     entry_2 = customtkinter.CTkEntry(
         master=frames[1], placeholder_text="Device Id", width=200)
-    entry_2_2 = customtkinter.CTkEntry(
-        master=frames[1], placeholder_text="Flow Rate [uL/min] ", width=200)
 
     switch_3 = customtkinter.CTkSwitch(
         master=frames[2], text="On/Off", command=switch_fluigent)
@@ -215,10 +212,6 @@ class Widget():
         self.entry_2 = customtkinter.CTkEntry(
             master=frame_2, placeholder_text="Device Id", width=width_saleae)
         self.entry_2.pack(pady=10, padx=10)
-
-        self.entry_2_2 = customtkinter.CTkEntry(
-            master=frame_2, placeholder_text="Flow Rate [uL/min] ", width=width_saleae)
-        self.entry_2_2.pack(pady=10, padx=10)
 
     def create_fluigent_frame(self, app):
         self.frame_3 = customtkinter.CTkFrame(master=app)
