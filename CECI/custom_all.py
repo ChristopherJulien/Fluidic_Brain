@@ -1,19 +1,23 @@
 import tkinter
 import customtkinter
+import tkinterdnd2 as tkinterDnD
 
-customtkinter.set_appearance_mode("System")  # Other: "Dark", "Light"
+
+customtkinter.set_appearance_mode("Dark")  # Other: "System", "Light"
 
 
 class TestApp(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.geometry(f"{1400}x{700}")
-        self.title("CustomTkinter complete test")
+        self.title("Combined Environment Control Interface")
+        x_space = 300
 
-        self.create_widgets_on_tk()
-        self.create_widgets_on_ctk_frame()
+        self.create_syringe_widget(text='Syringe Pump')
+        self.create_saleae_widget(text='SALEAE', x_space=x_space)
+
         self.create_widgets_on_ctk_frame_customized()
-        self.create_widgets_on_tk_frame_customized()
+        # self.create_widgets_on_tk_frame_customized()
 
     def change_appearance_mode(self, value):
         """ gets called by self.slider_1 """
@@ -28,11 +32,11 @@ class TestApp(customtkinter.CTk):
             self.label_1.configure(text="mode: System")
             customtkinter.set_appearance_mode("System")
 
-    def create_widgets_on_tk(self):
-        x, y = 150, 80
+    def create_saleae_widget(self, x_space=0, text='TEXT', fg_color='gray50'):
+        x, y = 150+x_space, 80
 
         self.label_1 = customtkinter.CTkLabel(
-            master=self, text="widgets_on_tk", fg_color="gray50")
+            master=self, text=text, fg_color=fg_color)
         self.label_1.place(x=x, y=y, anchor=tkinter.CENTER)
 
         self.frame_1 = customtkinter.CTkFrame(
@@ -54,6 +58,44 @@ class TestApp(customtkinter.CTk):
 
         self.check_box_1 = customtkinter.CTkCheckBox(master=self)
         self.check_box_1.place(x=x, y=y + 480, anchor=tkinter.CENTER)
+
+    def create_syringe_widget(self, x_space=0, text='TEXT', fg_color='gray50'):
+        x, y = 150+x_space, 80
+
+        # Create the Gray Label
+        self.label_1 = customtkinter.CTkLabel(
+            master=self, text=text, fg_color=fg_color)
+        self.label_1.place(x=x, y=y, anchor=tkinter.CENTER)
+
+        # Record the Syringe Volume
+        # Record the Syringe Type
+        # Record the Runtime
+        # Set the COM number
+
+        # self.frame_1 = customtkinter.CTkFrame(
+        #     master=self, width=200, height=60)
+        # self.frame_1.place(x=x, y=y+80, anchor=tkinter.CENTER)
+
+        # self.button_1 = customtkinter.CTkButton(master=self)
+        # self.button_1.place(x=x, y=y + 160, anchor=tkinter.CENTER)
+
+        self.entry_1 = customtkinter.CTkEntry(master=self)
+        self.entry_1.place(
+            x=x, y=y + 80, anchor=tkinter.CENTER)
+
+        self.entry_2 = customtkinter.CTkEntry(master=self)
+        self.entry_2.place(
+            x=x, y=y + 160, anchor=tkinter.CENTER)
+
+        # self.progress_bar_1 = customtkinter.CTkProgressBar(master=self)
+        # self.progress_bar_1.place(x=x, y=y + 320, anchor=tkinter.CENTER)
+
+        # self.slider_1 = customtkinter.CTkSlider(
+        #     master=self, command=self.change_appearance_mode, from_=0, to=2, number_of_steps=2)
+        # self.slider_1.place(x=x, y=y + 400, anchor=tkinter.CENTER)
+
+        # self.check_box_1 = customtkinter.CTkCheckBox(master=self)
+        # self.check_box_1.place(x=x, y=y + 480, anchor=tkinter.CENTER)
 
     def create_widgets_on_ctk_frame(self):
         x, y = 450, 40
@@ -116,42 +158,48 @@ class TestApp(customtkinter.CTk):
         self.label_3.configure(
             fg_color=("#F4F4FA", "#333D5E"), text_color=("#373E57", "#7992C1"))
 
-        self.frame_3 = customtkinter.CTkFrame(
-            master=self.ctk_frame_customized, width=200, height=60)
-        self.frame_3.place(relx=0.5, y=y + 80, anchor=tkinter.CENTER)
-        self.frame_3.configure(fg_color=("#EBECF3", "#4B577E"))
+        frame_1 = customtkinter.CTkFrame(master=self.ctk_frame_customized)
+        optionmenu_1 = customtkinter.CTkOptionMenu(
+            frame_1, values=["Option 1", "Option 2", "Option 42 long long long..."])
+        optionmenu_1.pack(pady=10, padx=10)
+        optionmenu_1.set("CTkOptionMenu")
 
-        self.button_3 = customtkinter.CTkButton(master=self.ctk_frame_customized, command=lambda: None, border_width=3,
-                                                corner_radius=20, font=("times", 16))
-        self.button_3.place(relx=0.5, y=y + 160, anchor=tkinter.CENTER)
-        self.button_3.configure(border_color=(
-            "#4F90F8", "#6FADF9"), hover_color=("#3A65E8", "#4376EE"))
-        self.button_3.configure(fg_color="transparent")
+        # self.frame_3 = customtkinter.CTkFrame(
+        #     master=self.ctk_frame_customized, width=200, height=60)
+        # self.frame_3.place(relx=0.5, y=y + 80, anchor=tkinter.CENTER)
+        # self.frame_3.configure(fg_color=("#EBECF3", "#4B577E"))
 
-        self.entry_3 = customtkinter.CTkEntry(
-            master=self.ctk_frame_customized, font=("times", 16))
-        self.entry_3.place(relx=0.5, y=y + 240, anchor=tkinter.CENTER)
-        self.entry_3.configure(fg_color=("gray60", "gray5"), corner_radius=20)
-        self.entry_3.insert(0, "1234567890")
-        self.entry_3.focus_set()
+        # self.button_3 = customtkinter.CTkButton(master=self.ctk_frame_customized, command=lambda: None, border_width=3,
+        #                                         corner_radius=20, font=("times", 16))
+        # self.button_3.place(relx=0.5, y=y + 160, anchor=tkinter.CENTER)
+        # self.button_3.configure(border_color=(
+        #     "#4F90F8", "#6FADF9"), hover_color=("#3A65E8", "#4376EE"))
+        # self.button_3.configure(fg_color="transparent")
 
-        self.progress_bar_3 = customtkinter.CTkProgressBar(
-            master=self.ctk_frame_customized, height=16, fg_color=("#EBECF3", "#4B577E"))
-        self.progress_bar_3.place(relx=0.5, y=y + 320, anchor=tkinter.CENTER)
-        self.progress_bar_3.configure(
-            progress_color="#8AE0C3", border_width=3, border_color=("gray60", "#4B577E"))
+        # self.entry_3 = customtkinter.CTkEntry(
+        #     master=self.ctk_frame_customized, font=("times", 16))
+        # self.entry_3.place(relx=0.5, y=y + 240, anchor=tkinter.CENTER)
+        # self.entry_3.configure(fg_color=("gray60", "gray5"), corner_radius=20)
+        # self.entry_3.insert(0, "1234567890")
+        # self.entry_3.focus_set()
 
-        self.slider_3 = customtkinter.CTkSlider(
-            master=self.ctk_frame_customized, command=self.change_frame_color, from_=0, to=10)
-        self.slider_3.place(relx=0.5, y=y + 400, anchor=tkinter.CENTER)
-        self.slider_3.configure(button_color="#8AE0C3", fg_color=(
-            "#EBECF3", "#4B577E"), progress_color=("gray30", "gray10"))
-        self.slider_3.configure(from_=0, to=1)
+        # self.progress_bar_3 = customtkinter.CTkProgressBar(
+        #     master=self.ctk_frame_customized, height=16, fg_color=("#EBECF3", "#4B577E"))
+        # self.progress_bar_3.place(relx=0.5, y=y + 320, anchor=tkinter.CENTER)
+        # self.progress_bar_3.configure(
+        #     progress_color="#8AE0C3", border_width=3, border_color=("gray60", "#4B577E"))
 
-        self.check_box_3 = customtkinter.CTkCheckBox(
-            master=self.ctk_frame_customized, corner_radius=50, font=("times", 16))
-        self.check_box_3.place(relx=0.5, y=y + 480, anchor=tkinter.CENTER)
-        self.check_box_3.configure(border_color="#8AE0C3")
+        # self.slider_3 = customtkinter.CTkSlider(
+        #     master=self.ctk_frame_customized, command=self.change_frame_color, from_=0, to=10)
+        # self.slider_3.place(relx=0.5, y=y + 400, anchor=tkinter.CENTER)
+        # self.slider_3.configure(button_color="#8AE0C3", fg_color=(
+        #     "#EBECF3", "#4B577E"), progress_color=("gray30", "gray10"))
+        # self.slider_3.configure(from_=0, to=1)
+
+        # self.check_box_3 = customtkinter.CTkCheckBox(
+        #     master=self.ctk_frame_customized, corner_radius=50, font=("times", 16))
+        # self.check_box_3.place(relx=0.5, y=y + 480, anchor=tkinter.CENTER)
+        # self.check_box_3.configure(border_color="#8AE0C3")
 
     def create_widgets_on_tk_frame_customized(self):
         x, y = 1150, 40
