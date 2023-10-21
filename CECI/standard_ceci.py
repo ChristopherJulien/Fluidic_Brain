@@ -5,7 +5,6 @@ from tkinter import filedialog  # Import filedialog from tkinter
 import time
 import os
 
-
 customtkinter.set_ctk_parent_class(tkinterDnD.Tk)
 
 # Modes: "System" (standard), "Dark", "Light"
@@ -30,23 +29,20 @@ def browse_directory():
     if directory:
         selected_directory.set(directory)
 
+
 # Create a countdown function
-
-
 def countdown(duration):
     for i in range(duration, -1, -1):
         time_remaining.set(i)  # Update the time remaining
         # Calculate progress percentage
-        progress = 1-((duration - i) / duration)
+        progress = 1 - ((duration - i) / duration)
         progressbar_5.set(progress)  # Update the progress bar
         app.update()  # Update the tkinter GUI
         time.sleep(0.5)  # Wait for 1 second
 
+
 # Create a Start Countdown button callback
-
-
 def start():
-
     print('Switch Syringe Pump: ', switch_1.get())
     print('Syringe Pump COM: ', combobox_1_0.get())
     print('Syringe Pump Syringe: ', segmented_button_1.get())
@@ -267,11 +263,6 @@ button_5 = customtkinter.CTkButton(
     master=frame_bottom, text="START", command=button_callback)
 button_5.pack(pady=10, padx=10)
 
-# Configure row and column weights for proper resizing
-for i in range(4):
-    app.grid_columnconfigure(i, weight=1)
-
-app.grid_rowconfigure(0, weight=1)
-app.grid_rowconfigure(1, weight=1)
+# Add your additional code here
 
 app.mainloop()

@@ -1,16 +1,16 @@
 calibration_flag = False
 micro_flag = False
 nb_controllers = 2
-plateau_time = 18 if not calibration_flag else 10
+plateau_time = 10 if not calibration_flag else 10
 
 start_p1 = 0 if not calibration_flag else 0
 max_p1 = 200 if not calibration_flag else 10
-nb_steps1 = 25 if not calibration_flag else 10
+nb_steps1 = 20 if not calibration_flag else 10
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 
 start_p2 = 0 if not calibration_flag else 0
 max_p2 = 200 if not calibration_flag else 10
-nb_steps2 = 25 if not calibration_flag else 10
+nb_steps2 = 20 if not calibration_flag else 10
 
 zigzag: bool = False
 nb_big_ramp_controller: int = 1

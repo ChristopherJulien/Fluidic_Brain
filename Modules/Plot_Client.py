@@ -1319,13 +1319,14 @@ class Plot:
 
 
 if __name__ == "__main__":
-    folder_path = r'FNetwork-1_8_Diode2_neg2'
+    folder_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\FN-1_8-TUBE_++_pt_15'
     plot = Plot(folder_path)
     save = True
     moving_average = 0
 
-# 1. plot the normal voltages
-    # plot.channels_vs_time(save, moving_average=0)
+# 1. plot the recorded absolute pressures
+    plot.double_pressure_controller_command_overview(
+        save, moving_average, nb_controllers=2)
 
 # 2. get the calibration offset
     plot.calibration_mean = plot.get_channels_calibration_offset(

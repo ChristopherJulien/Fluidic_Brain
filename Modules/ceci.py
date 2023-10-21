@@ -81,6 +81,10 @@ class Widget():
         # Define logic for SLS switch
         pass
 
+    def check_calibration(self):
+        # Define logic for calibration checkbox
+        pass
+
     switch_1 = customtkinter.CTkSwitch(
         master=frames[0], text="On/Off", command=switch_syringe_pump)
     combobox_1_0 = customtkinter.CTkComboBox(
@@ -96,6 +100,8 @@ class Widget():
 
     switch_2 = customtkinter.CTkSwitch(
         master=frames[1], text="On/Off", command=switch_saleae)
+    checkbox_2 = customtkinter.CTkCheckBox(
+        master=frames[1], text="Calibration", command=check_calibration)
     combobox_2 = customtkinter.CTkComboBox(
         frames[1], values=[str(i) for i in range(1, 13)], width=200)
     segmented_button_2 = customtkinter.CTkSegmentedButton(
@@ -189,6 +195,10 @@ class Widget():
         self.switch_2 = customtkinter.CTkSwitch(
             master=frame_2, text="On/Off", command=self.switch_saleae)
         self.switch_2.pack(pady=10, padx=10)
+
+        checkbox_2 = customtkinter.CTkCheckBox(
+            master=frame_2, text="Calibration", command=self.check_calibration)
+        checkbox_2.pack(pady=10, padx=10)
 
         self.combobox_2 = customtkinter.CTkComboBox(
             frame_2, values=[str(i) for i in range(1, 13)], width=width_saleae)

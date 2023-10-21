@@ -7,11 +7,6 @@ import subprocess
 import sys
 import json
 import os
-import customtkinter
-import tkinterdnd2 as tkinterDnD
-from tkinter import filedialog
-import time
-import os
 # Import the required libraries
 import customtkinter
 import tkinterdnd2 as tkinterDnD
@@ -43,6 +38,20 @@ bottom_frame = customtkinter.CTkFrame(master=app)
 bottom_frame.grid(row=1, column=0, columnspan=4,
                   padx=20, pady=20, sticky="nsew")
 
+flag_syringe_pump = False
+COM_syringe_pump = None
+type_syringe_pump = None
+volume_syringe_pump = None
+flow_rate_syringe_pump = None
+
+flag_saleae = False
+flag_calibration = False
+COM_saleae = None
+channels_saleae = None
+buffer_size_saleae = None
+sampling_rate_saleae = None
+device_id_saleae = None
+
 
 class Widget():
     def browse_directory(self):
@@ -51,47 +60,62 @@ class Widget():
             self.selected_directory.set(directory)
 
     def start(self):
-        print('Switch Syringe Pump: ', self.switch_1.get())
         flag_syringe_pump = self.switch_1.get()
+        COM_syringe_pump = self.combobox_1_0.get()
+        type_syringe_pump = self.segmented_button_1.get()
+        volume_syringe_pump = self.entry_1.get()
+        flow_rate_syringe_pump = self.entry_1_2.get()
+
+        flag_saleae = self.switch_2.get()
+        flag_calibration = self.checkbox_2.get()
+        COM_saleae = self.combobox_2.get()
+        channels_saleae = self.segmented_button_2.get()
+        buffer_size_saleae = self.combobox_2_1.get()
+        sampling_rate_saleae = self.combobox_2_2.get()
+        device_id_saleae = self.entry_2.get()
+
+        exp_folder = self.entry_5_1.get()
+        master_folder_path = self.selected_directory.get() + r"/"+exp_folder
+
+        if flag_calibration:
+            print("Calibration on everything")
+
+        if flag_syringe_pump and flag_saleae:
+            # run with the syringe pump
+            print('Syringe Pump and Saleae are on')
+            pass
+
+        elif flag_syringe_pump:
+            # run with the syringe pump
+            print('Syringe Pump is on')
+            pass
+
+        elif flag_calibration and flag_saleae:
+            print('Calibration and Saleae are on')
+            # run without the syringe pump
+            pass
+
+        print('Switch Syringe Pump: ', self.switch_1.get())
         print('Syringe Pump COM: ', self.combobox_1_0.get())
-        com_syringe_pump = self.combobox_1_0.get()
         print('Syringe Pump Syringe: ', self.segmented_button_1.get())
-        channels = self.segmented_button_1.get()
         print('Syringe Pump Syringe Type: ', self.combobox_1_2.get())
-        syringe_type = self.combobox_1_2.get()
         print('Syringe Pump Syringe Volume: ', self.entry_1.get())
-        syringe_volume = self.entry_1.get()
         print('Syringe Pump Flow Rate: ', self.entry_1_2.get())
-        flow_rate = self.entry_1_2.get()
 
         print('Switch Saleae: ', self.switch_2.get())
-        flag_saleae = self.switch_2.get()
         print('Saleae COM: ', self.combobox_2.get())
-        com_saleae = self.combobox_2.get()
         print('Saleae Channels: ', self.segmented_button_2.get())
-        channels_saleae = self.segmented_button_2.get()
         print('Saleae Buffer Size: ', self.combobox_2_1.get())
-        buffer_size = self.combobox_2_1.get()
         print('Saleae Sampling Rate: ', self.combobox_2_2.get())
-        sampling_rate = self.combobox_2_2.get()
         print('Saleae Device Id: ', self.entry_2.get())
-        device_id = self.entry_2.get()
 
         print('Switch Fluigent: ', self.switch_3.get())
-        flag_fluigent = self.switch_3.get()
 
         print('Switch SLS: ', self.switch_4.get())
-        flag_sls = self.switch_4.get()
 
         print('Experiment Folder Name: ', self.entry_5_1.get())
-        experiment_folder_name = self.entry_5_1.get()
         print('Export Directory: ', self.selected_directory.get())
-        export_directory = self.selected_directory.get()
-
-        master_folder_path = export_directory + r"/"+experiment_folder_name
-
-        # print('Capture Duration: ', self.entry_5.get())
-
+        print('Capture Duration: ', self.entry_5.get())
         # duration = int(self.entry_5.get())
 
         # if duration > 0:
@@ -115,6 +139,10 @@ class Widget():
         # Define logic for SLS switch
         pass
 
+    def check_calibration(self):
+        # Define logic for calibration checkbox
+        pass
+
     switch_1 = customtkinter.CTkSwitch(
         master=frames[0], text="On/Off", command=switch_syringe_pump)
     combobox_1_0 = customtkinter.CTkComboBox(
@@ -130,6 +158,8 @@ class Widget():
 
     switch_2 = customtkinter.CTkSwitch(
         master=frames[1], text="On/Off", command=switch_saleae)
+    checkbox_2 = customtkinter.CTkCheckBox(
+        master=frames[1], text="Calibration", command=check_calibration)
     combobox_2 = customtkinter.CTkComboBox(
         frames[1], values=[str(i) for i in range(1, 13)], width=200)
     segmented_button_2 = customtkinter.CTkSegmentedButton(
@@ -223,6 +253,10 @@ class Widget():
         self.switch_2 = customtkinter.CTkSwitch(
             master=frame_2, text="On/Off", command=self.switch_saleae)
         self.switch_2.pack(pady=10, padx=10)
+
+        checkbox_2 = customtkinter.CTkCheckBox(
+            master=frame_2, text="Calibration", command=self.check_calibration)
+        checkbox_2.pack(pady=10, padx=10)
 
         self.combobox_2 = customtkinter.CTkComboBox(
             frame_2, values=[str(i) for i in range(1, 13)], width=width_saleae)

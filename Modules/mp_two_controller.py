@@ -29,16 +29,16 @@ sls_interval = "\x00\x64"  # recording interaval 100ms
 
 # Pressure Parameters
 nb_controllers = 2
-plateau_time = 18 if not calibration_flag else 10
+plateau_time = 15 if not calibration_flag else 10
 
-start_p1 = -200 if not calibration_flag else 0
-max_p1 = 0 if not calibration_flag else 10
-nb_steps1 = 25 if not calibration_flag else 10
+start_p1 = 0 if not calibration_flag else 0
+max_p1 = -200 if not calibration_flag else 10
+nb_steps1 = 20 if not calibration_flag else 10
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 
-start_p2 = -200 if not calibration_flag else 0
-max_p2 = 0 if not calibration_flag else 10
-nb_steps2 = 25 if not calibration_flag else 10
+start_p2 = 0 if not calibration_flag else 0
+max_p2 = -200 if not calibration_flag else 10
+nb_steps2 = 20 if not calibration_flag else 10
 
 # Dont matter for mp_two_controller
 min_p2 = -200 if not calibration_flag else 0
@@ -46,7 +46,6 @@ min_p1 = -200 if not calibration_flag else 0
 
 zigzag: bool = False
 nb_big_ramp_controller: int = 1
-
 
 # Saleae Parameters
 buffer_size_megabytes = 20000
@@ -60,19 +59,8 @@ h_init_cm = ''
 vl_init = ''
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# If experiment name is too long Saleae will have trouble saving the file at this folder
-
-# exp_folder = 'node_tube_{:s}_ID_{:s}_{:s}_node_h_init{:s}_vl_init{:s}/'.format(Lstring, IDstring, check_valve_type,h_init_cm,vl_init)
-# exp_folder = ('A_II_plateau_time_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-# exp_folder = ('TEST_plateau_time_s_{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:d}'.format(plateau_time, Pstart, Pmax, Pmin, step_size))
-# exp_folder = ('NO-FLOW-SLS-CALIBRATION'.format(
-# exp_folder = ('FS-NoFlow-Threaded-plateau_time{:d}_p_start_{:d}_p_max_{:d}_p_min{:d}_step_size_{:f}'.format(
-# plateau_time, start_p1, max_p1, min_p1, nb_steps1))
-exp_folder = ("{:s}FNetwork-1_8_Diode2_neg2".format(
+exp_folder = ("{:s}FN-1_8-TUBE_--_pt_15".format(
     calibration_folder))
-# exp_folder = ('{:s}Forward_Netowork-plat_time_{:d}_p1_start_{:d}_p1_max_{:d}_p1_min{:d}_step_size1_{:0.2f}-_p2_start_{:d}_p2_max_{:d}_p2_min{:d}_step_size2_{:0.2f}'.format(
-#     calibration_folder, plateau_time, start_p1, max_p1, min_p1, nb_steps1, start_p2, max_p2, min_p2, nb_steps2))
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -123,7 +111,7 @@ json_string = json.dumps(parameters_dict)
 # Replace these with the paths to your three Python scripts
 script1_path_saleae = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Saleae.py"
 script2_path_sls = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\SLS_1500.py"
-script3_path_push_pull = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Push_Pull_Pressure.py"
+script3_path_double_push_pull = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Double_Push_Pull_Pressure.py"
 script4_path_micro_flow = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\FLG_M_Plus.py"
 
 # Define a function to run the scripts and pass json file as arguments to each script
@@ -158,7 +146,7 @@ elif calibration_flag == False:
     if micro_flag:
         process1_saleae = run_script(script1_path_saleae)
         # process0_uflow = run_script(script4_path_micro_flow)
-        process2_push_pull = run_script(script3_path_push_pull)
+        process2_push_pull = run_script(script3_path_double_push_pull)
         close_script(process1_saleae)
         # close_script(process0_uflow)
         close_script(process2_push_pull)
@@ -166,7 +154,7 @@ elif calibration_flag == False:
     else:
         process1_saleae = run_script(script1_path_saleae)
         # process0_flow_sls = run_script(script2_path_sls)
-        process3_push_pull = run_script(script3_path_push_pull)
+        process3_push_pull = run_script(script3_path_double_push_pull)
         close_script(process1_saleae)
         # close_script(process0_flow_sls)
         close_script(process3_push_pull)
