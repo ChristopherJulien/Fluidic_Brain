@@ -20,6 +20,7 @@ import os
 
 # Calibration
 calibration_flag = 0
+
 micro_flag = False
 calibration_folder = 'Calibration_' if calibration_flag else ''
 
@@ -29,7 +30,8 @@ sls_interval = "\x00\x64"  # recording interaval 100ms
 
 # Pressure Parameters
 nb_controllers = 2
-plateau_time = 15 if not calibration_flag else 10
+# plateau_time = 18 if not calibration_flag else 10
+plateau_time = 18 if not calibration_flag else 10
 
 start_p1 = 0 if not calibration_flag else 0
 max_p1 = -200 if not calibration_flag else 10
@@ -59,8 +61,10 @@ h_init_cm = ''
 vl_init = ''
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-exp_folder = ("{:s}FN-1_8-TUBE_--_pt_15".format(
-    calibration_folder))
+# exp_folder = ("{:s}Test++".format(
+# calibration_folder))
+exp_folder = ("{:s}FN-1_8-TUBE_--_pt_18".format(
+    calibration_folder, plateau_time))
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -87,8 +91,8 @@ path_to_save_parameters = master_folder_path + dict_name
 print(f"Path to save parameters: {path_to_save_parameters}")
 
 if nb_controllers == 2:
-    possible_p1 = ((max_p1-start_p1)/nb_steps1) + 1
-    possible_p2 = ((max_p2-start_p2)/nb_steps2) + 1
+    possible_p1 = abs(((max_p1-start_p1)/nb_steps1)) + 1
+    possible_p2 = abs(((max_p2-start_p2)/nb_steps2)) + 1
     all_steps = possible_p1*possible_p2
     total_seconds = all_steps*plateau_time
     total_mins = total_seconds // 60

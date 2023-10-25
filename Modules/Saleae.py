@@ -113,7 +113,8 @@ class LogicCapture:
             )
 
             with manager.start_capture(
-                    device_id='624C439C76D52E8B',
+                    device_id='624C439C76D52E8B',  # hdmi port logic 8 Pro
+                    # device_id='B98F3792BA08E057',  # micro usb logic 8
                     device_configuration=device_configuration,
                     capture_configuration=capture_configuration) as capture:
 

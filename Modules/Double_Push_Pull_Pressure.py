@@ -136,7 +136,7 @@ class Pressure_Controller:
         # return None
         for p_0 in p_range:
             fgt_set_pressure(0, p_0)
-            print(f'Set pressure to p_0 = {p_0:.1f} mbar', end="\r")
+            # print(f'Set pressure to p_0 = {p_0:.1f} mbar', end="\r")
             self.inputs_list.append([p_0])
             self.times_list.append(self.time)
             time.sleep(plateau_time)
@@ -179,6 +179,8 @@ class Pressure_Controller:
 
         p_range1 = np.linspace(start_p1, end_p1, abs(nb_steps1))
         p_range2 = np.linspace(start_p2, end_p2, abs(nb_steps2))
+        print("p_range1", p_range1)
+
         nb_many_ramps_controller = int(1 - nb_big_ramp_controller)
 
         for p_0 in p_range1:
