@@ -7,7 +7,6 @@ import sys
 import json
 import os
 
-# TEST
 # Calibration
 calibration_flag = False
 micro_flag = True
