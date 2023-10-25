@@ -10,3 +10,5 @@
 .DS_Store\
 \.tmp.driveupload/
 \tmp.driveupload/
+*.DS_Store
+.DS_Store

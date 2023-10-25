@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# import MouseEvents as me
+import MouseEvents as me
 
 
 class BlittedCursor:
