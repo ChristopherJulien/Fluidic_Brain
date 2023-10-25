@@ -7,6 +7,7 @@ import sys
 import json
 import os
 
+# TEST
 # Calibration
 calibration_flag = False
 micro_flag = True
@@ -19,12 +20,11 @@ sls_interval = "\x00\x64"  # recording interaval 100ms
 nb_controllers = 1
 plateau_time = 30 if not calibration_flag else 30
 
-start_p1 = 25 if not calibration_flag else 0
-max_p1 = 26 if not calibration_flag else 10
-min_p1 = 25 if not calibration_flag else 0
+start_p1 = 0 if not calibration_flag else 0
+max_p1 = 200 if not calibration_flag else 10
+min_p1 = 10 if not calibration_flag else 0
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 nb_steps1 = 1 if not calibration_flag else 10
-
 
 # Saleae Parameters
 buffer_size_megabytes = 16000
