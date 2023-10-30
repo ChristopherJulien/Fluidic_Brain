@@ -15,25 +15,21 @@ import json
 import addcopyfighandler
 from matplotlib.colors import Normalize
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+import matplotlib.patches as patches
 
 SLS = 1
 FLG = 2
 WATER = 3
 GLYCEROL = 4
-# FN-channel-Dictionary
-# channel_dict = {
-#     "Time [s]": ('Time [s]', 'none', 's', 'none'),
-#     "Channel 0": ('Channel 0', 'black', '7kPa', 0.057),
-#     "Channel 1": ('Channel 1', 'brown', '2kPa', 0.2),
-#     "Channel 2": ('Channel 2', 'red',  '25kPa', 0.018),
-#     "Channel 3": ('Channel 3', 'orange', '25kPa', 0.018)
-# }
 
 # CV-channel-Dictionary
 channel_dict = {
     "Time [s]": ('Time [s]', 'none', 's', 'none'),
     "Channel 0": ('Channel 0', 'black', '25kPa',  0.018),
-    "Channel 1  ": ('Channel 1', 'brown', '7kPa', 0.057),
+    "Channel 1": ('Channel 1', 'brown', '7kPa', 0.057),
     "Channel 2": ('Channel 2', 'red',  '2kPa', 0.2),
     "Channel 3": ('Channel 3', 'orange', 'none', 0.0),
 }
@@ -74,18 +70,18 @@ class Plot:
             data = json.load(json_file)
         self.calibration_flag = data["calibration_flag"]
         self.nb_controllers = data["nb_controllers"]
-        self.IDstring = data["IDstring"]
-        self.Lstring = data["Lstring"]
-        self.check_valve_type = data["check_valve_type"]
-        self.plateau_time = data["plateau_time"]
-        self.start_p1 = data["start_p1"]
-        self.start_p2 = data["start_p2"]
-        self.max_p1 = data["max_p1"]
-        self.max_p2 = data["max_p2"]
-        self.min_p1 = data["min_p1"]
-        self.min_p2 = data["min_p2"]
-        self.nb_steps1 = data["nb_steps1"]
-        self.nb_steps2 = data["nb_steps2"]
+        # self.IDstring = data["IDstring"]
+        # self.Lstring = data["Lstring"]
+        # self.check_valve_type = data["check_valve_type"]
+        # self.plateau_time = data["plateau_time"]
+        # self.start_p1 = data["start_p1"]
+        # self.start_p2 = data["start_p2"]
+        # self.max_p1 = data["max_p1"]
+        # self.max_p2 = data["max_p2"]
+        # self.min_p1 = data["min_p1"]
+        # self.min_p2 = data["min_p2"]
+        # self.nb_steps1 = data["nb_steps1"]
+        # self.nb_steps2 = data["nb_steps2"]
         # self.h_init_cm = data["h_init_cm"]
         # self.vl_init_mL = data["vl_init"]
         self.micro_flag = data["micro_flag"]
@@ -98,7 +94,7 @@ class Plot:
         self.micro_flow_flg_subfolder = data["micro_flow_flg_subfolder"]
         self.total_seconds = data["total_seconds"]
         self.total_time = data["total_time"]
-        self.calibration_time_s = data["calibration_time_s"]
+        # self.calibration_time_s = data["calibration_time_s"]
 
     def unpickle(self, filename):
         inputfile = open(filename, 'rb')
@@ -389,6 +385,7 @@ class Plot:
 
             # Plot the offeset values
             if self.calibration_mean != [] and plot_calibration_mean:
+
                 plt.axhline(
                     y=self.calibration_mean[0], color=channel_dict['Channel 0'][1], linestyle='--', label='Offset Channel 0')
                 plt.axhline(
@@ -464,7 +461,7 @@ class Plot:
         df.to_csv(pressure_path, index=False)
         print(f"New pressures.csv created successfully.")
 
-    def pressure_vs_time_2_7_25(self, save=None, moving_average=0):
+    def pressure_vs_time_2_7_25(self, save=None, moving_average=0, show_plot=True):
         pressure_path = self.folder_path + \
             r'\voltages_saleae\analog_pressures\pressures.csv'
         df = pd.read_csv(pressure_path)
@@ -530,7 +527,8 @@ class Plot:
                 save_directory, f"set_pressures_vs_time_{self.exp_name}.png")
             plt.savefig(save_path)
 
-        plt.show()
+        if show_plot:
+            plt.show()
 
     def create_pressure_7_25_25_25_v_time_csv(self):
         folder_path = self.folder_path
@@ -615,6 +613,100 @@ class Plot:
         # Save the modified DataFrame to the new CSV file
         df.to_csv(pressure_path, index=False)
         print(f"New calibrated_pressures.csv created successfully.")
+
+    def create_pressure_2_7_25_v_time_csv(self):
+        folder_path = self.folder_path
+        analog_path = folder_path + r'/voltages_saleae/analog_voltages/analog.csv'
+
+        os.makedirs(
+            folder_path + r'/voltages_saleae/analog_pressures', exist_ok=True)
+        pressure_path = folder_path + \
+            r'\voltages_saleae\analog_pressures\calibrated_pressures.csv'
+
+        # Read the original CSV file
+        df = pd.read_csv(analog_path)
+
+        # Change to calibrated voltage values
+        print(self.zero_v_difference)
+        df[channel_dict['Channel 0'][0]] = df[channel_dict['Channel 0']
+                                              [0]]-self.zero_v_difference[0]
+        df[channel_dict['Channel 1'][0]] = df[channel_dict['Channel 1']
+                                              [0]]-self.zero_v_difference[1]
+        df[channel_dict['Channel 2'][0]] = df[channel_dict['Channel 2']
+                                              [0]]-self.zero_v_difference[2]
+        df[channel_dict['Channel 3'][0]] = df[channel_dict['Channel 3']
+                                              [0]]-self.zero_v_difference[3]
+
+        # Change column headers to our desired names
+        df.columns = ['s',
+                      'delta_p_25',
+                      'delta_p_7',
+                      'delta_p_2',
+                      'empty'
+                      ]
+        df.to_csv(pressure_path, index=False)
+
+        # Apply voltage to pressure transfer function and times 10 to get mbar from kpa
+        df['delta_p_2'] = ((df['delta_p_2']/5) - 0.5)/0.2 * 10
+        df['delta_p_7'] = ((df['delta_p_7']/5) - 0.5)/0.057 * 10
+        df['delta_p_25'] = ((df['delta_p_25']/5) - 0.5)/0.018 * 10
+
+        # Save the modified DataFrame to the new CSV file
+        df.to_csv(pressure_path, index=False)
+        print(f"New calibrated_pressures.csv created successfully.")
+
+    def pressure_vs_time_2_7_25(self, save=None, moving_average=0, show_plot=True):
+        pressure_path = self.folder_path + \
+            r'\voltages_saleae\analog_pressures\calibrated_pressures.csv'
+        df = pd.read_csv(pressure_path)
+
+        # Change the name of the columns
+        line_25_black = df['delta_p_25']
+        line_7_brown = df['delta_p_7']
+        line_2_red = df['delta_p_2']
+
+        if moving_average > 0:
+            line_25_black = line_25_black.rolling(window=moving_average).mean()
+            line_7_brown = line_7_brown.rolling(window=moving_average).mean()
+            line_2_red = line_2_red.rolling(window=moving_average).mean()
+
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
+        line_7_black, = ax.plot(
+            df['s'], line_25_black, lw=2, label='25kPa', color='black')
+        line_7_brown, = ax.plot(
+            df['s'], line_7_brown, lw=2, label='7kPa', color='brown')
+        line_2_red, = ax.plot(df['s'], line_2_red,
+                              lw=2, label='2kPa', color='red')
+
+        leg = ax.legend(fancybox=True, shadow=True)
+
+        lines = [line_2_red, line_7_black, line_25_black]
+        lined = {}
+
+        for legline, origline in zip(leg.get_lines(), lines):
+            legline.set_picker(True)
+            lined[legline] = origline
+
+        def on_pick(event):
+            print('Picked')
+            legline = event.artist
+            origline = lined[legline]
+            visible = not origline.get_visible()
+            origline.set_visible(visible)
+            legline.set_alpha(1.0 if visible else 0.2)
+            fig.canvas.draw()
+        fig.canvas.mpl_connect('pick_event', on_pick)
+
+        plt.autoscale(axis='y')
+        plt.xlabel('Time [s]', fontsize=20)
+        plt.ylabel('Pressure [mbar]', fontsize=20)
+        plt.title('Calibrated Pressure vs Time')
+        plt.tick_params(axis='both', which='major', labelsize=16)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+
+        if show_plot:
+            plt.show()
 
     def pressure_vs_time_7_25_25_25(self, save=None, moving_average=0):
         pressure_path = self.folder_path + \
@@ -885,6 +977,45 @@ class Plot:
 
         plt.show()
 
+    def single_pressure_controller_command_overview(self, save=None, moving_average=0, nb_controllers=1, show_plot=True):
+        if self.calibration_flag:
+            print("Calibration flag is set to True. Skipping double pressure plot.")
+            return
+        assert nb_controllers == 1, "Number of controllers must be equal to 1"
+        measured_pressure_path = self.folder_path + \
+            r'\pressure_ramp_flg\pressure_measurements.csv'
+        df = pd.read_csv(measured_pressure_path)
+
+        if moving_average > 0 and nb_controllers == 1:
+            df['mbar'] = df['mbar'].rolling(window=moving_average).mean()
+            df['s'] = df['s'].rolling(window=moving_average).mean()
+        fig, ax = plt.subplots(figsize=(9.0, 3.0))
+        if nb_controllers == 1:
+            plt.scatter(df['s'], df['mbar'],
+                        color='Red')
+        plt.autoscale(axis='y')
+        plt.xlabel('Time [s]', fontsize=20)
+        plt.ylabel('Pushh Pull Commanded Pressure [mbar]', fontsize=20)
+        plt.ylabel('Pressure Commanded [mbar]', fontsize=20)
+        ax.spines['left'].set_linewidth(0.5)
+        ax.spines['bottom'].set_linewidth(0.5)
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+        # Customize the legend
+        plt.rcParams['figure.autolayout'] = True
+        plt.rcParams['font.size'] = 9
+        plt.rcParams['legend.edgecolor'] = '1'
+        plt.legend(fontsize=12, frameon=False)
+
+        if save:
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"commanded_vs_recorded_pressures_{self.exp_name}.png")
+            plt.savefig(save_path)
+
+        if show_plot:
+            plt.show()
+
     def double_pressure_controller_command_overview(self, save=None, moving_average=0, nb_controllers=2, show_plot=True):
         if self.calibration_flag:
             print("Calibration flag is set to True. Skipping double pressure plot.")
@@ -946,7 +1077,7 @@ class Plot:
         axzoom.set_ylim(y - 0.1, y + 0.1)
         figzoom.canvas.draw()
 
-    def sls_flow_measurements(self, save=None, moving_average=0, zoomed=False):
+    def sls_flow_measurements(self, save=None, moving_average=0, zoomed=False, show_plot=True, invert_flow=False):
         flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
         # flow_path = r'C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\testsls_flow_measurments.csv'
         print("Plotting Flow Rate Over Time")
@@ -961,6 +1092,8 @@ class Plot:
             df['s'] = df['s'].rolling(window=window_size).mean()
 
         mL_min = df['mL/min'].tolist()
+        if invert_flow:
+            mL_min = [-x for x in mL_min]
         s = df['s'].tolist()
 
         ax.plot(s, mL_min, label='q measured mL/min')
@@ -1013,9 +1146,10 @@ class Plot:
                 figzoom.savefig(
                     f'{self.folder_path}/sls_flow_measurements_zoomed.png', dpi=300)
 
-        plt.show()
+        if show_plot:
+            plt.show()
 
-    def flg_flow_measurements(self, save=None, moving_average=0, zoomed=False):
+    def flg_flow_measurements(self, save=None, moving_average=0, zoomed=False, show_plot=True):
         flow_path = self.folder_path + r'\micro_flow_flg\micro_flow.csv'
         print("Plotting Flow Rate Over Time")
         fig, ax = plt.subplots(figsize=(9.0, 3.0))
@@ -1079,7 +1213,8 @@ class Plot:
                 figzoom.savefig(
                     f'{self.folder_path}/flg_flow_measurements_zoomed.png', dpi=300)
 
-        plt.show()
+        if show_plot:
+            plt.show()
 
     def flow_vs_pressure(self, save=None, flow_moving_average=0, pressure_moving_average=0, pressure_sensor_value=None):
         if self.micro_flag:
@@ -1156,6 +1291,157 @@ class Plot:
             save_directory = self.exp_name
             save_path = os.path.join(
                 save_directory, f"flow_vs_pressure_{pressure_sensor_value}0mbar.png")
+            plt.savefig(save_path)
+        plt.show()
+
+    def sls_flow_vs_pressure_with_two_linear_regressions(self, save=None, flow_moving_average=0, invert_flow=False, pressure_moving_average=0, pressure_sensor_value=None):
+
+        flow_path = self.folder_path + r'\flow_sls\sls_flow_measurments.csv'
+
+        pressure_path = self.folder_path + \
+            r'\voltages_saleae\analog_pressures\calibrated_pressures.csv'
+
+        df_flow = pd.read_csv(flow_path)
+        df_pressure = pd.read_csv(pressure_path)
+
+        # Get the corresponding values
+        flow_ml_min = df_flow['mL/min'].tolist()
+        if invert_flow:
+            flow_ml_min = [-x for x in flow_ml_min]
+        flow_s = df_flow['s'].tolist()
+
+        pressure_sensor_value_kPa = 'delta_p_' + str(pressure_sensor_value)
+        pressure_mbar = df_pressure[pressure_sensor_value_kPa].tolist()
+        pressure_s = df_pressure['s'].tolist()
+
+        if flow_moving_average > 0:
+            flow_ml_min = df_flow['mL/min'].rolling(
+                window=flow_moving_average).mean()
+            flow_s = df_flow['s'].rolling(window=flow_moving_average).mean()
+
+        if pressure_moving_average > 0:
+            pressure_mbar = df_pressure[pressure_sensor_value_kPa].rolling(
+                window=pressure_moving_average).mean()
+            pressure_s = df_pressure['s'].rolling(
+                window=pressure_moving_average).mean()
+
+        interpolated_pressure = np.interp(flow_s, pressure_s, pressure_mbar)
+
+        # Convert to numpy arrays for sklearn
+        X = interpolated_pressure.reshape(-1, 1)
+        y = flow_ml_min
+
+        # Fit linear regression model
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # Predict and calculate residuals
+        y_pred = model.predict(X)
+        residuals = y - y_pred
+
+        min_residual_index = np.argmin(residuals)
+        min_residual_value = residuals[min_residual_index]
+        min_residual_pressure = interpolated_pressure[min_residual_index]
+
+        split_index = np.where(interpolated_pressure ==
+                               min_residual_pressure)[0][0]
+
+        X1, y1 = X[:split_index], y[:split_index]
+        X2, y2 = X[split_index:], y[split_index:]
+        model1 = LinearRegression()
+        model1.fit(X1, y1)
+        model2 = LinearRegression()
+        model2.fit(X2, y2)
+
+        y_pred1 = model1.predict(X1)
+        y_pred2 = model2.predict(X2)
+        mse1 = mean_squared_error(y1, y_pred1)
+        mse2 = mean_squared_error(y2, y_pred2)
+
+        slope1 = model1.coef_[0]
+        slope2 = model2.coef_[0]
+
+        # For Model 1
+        intercept1 = model1.intercept_
+        line1_x = np.array([np.min(interpolated_pressure[:split_index]), np.max(
+            interpolated_pressure[:split_index])])
+        line1_y = intercept1 + slope1 * line1_x
+
+        # For Model 2
+        intercept2 = model2.intercept_
+        line2_x = np.array([np.min(interpolated_pressure[split_index:]), np.max(
+            interpolated_pressure[split_index:])])
+        line2_y = intercept2 + slope2 * line2_x
+
+        # Plotting
+        plt.figure(figsize=(12, 6))
+        plt.scatter(interpolated_pressure, y, label='Actual')
+        plt.plot(line1_x, line1_y, color='blue',
+                 label='Model 1 Line', linewidth=2)
+        plt.plot(line2_x, line2_y, color='orange',
+                 label='Model 2 Line', linewidth=2)
+        plt.axvline(x=min_residual_pressure, color='purple',
+                    linestyle='--', label='Split Point')
+
+        # Finalizing plot
+        plt.title('Actual vs. Predicted Values with Regression Lines')
+        plt.xlabel('Interpolated Pressure [mbar]')
+        plt.ylabel('Flow (ml/min)')
+        plt.legend()
+
+        if (save):
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"double_linear_regression{pressure_sensor_value}0mbar.png")
+            plt.savefig(save_path)
+        plt.show()
+
+    def flg_flow_vs_pressure(self, save=None, flow_moving_average=0, invert_flow=False,
+                             pressure_moving_average=0, pressure_sensor_value=None):
+        flow_path = self.folder_path + r'\micro_flow_flg\micro_flow.csv'
+
+        pressure_path = self.folder_path + \
+            r'\voltages_saleae\analog_pressures\calibrated_pressures.csv'
+
+        df_flow = pd.read_csv(flow_path)
+        df_pressure = pd.read_csv(pressure_path)
+
+        # Get the corresponding values
+        flow_uL_min = df_flow['uL/min'].tolist()
+        if invert_flow:
+            flow_uL_min = [-x for x in flow_uL_min]
+        flow_s = df_flow['s'].tolist()
+
+        pressure_sensor_value_kPa = 'delta_p_' + str(pressure_sensor_value)
+        pressure_mbar = df_pressure[pressure_sensor_value_kPa].tolist()
+        pressure_s = df_pressure['s'].tolist()
+
+        if flow_moving_average > 0:
+            flow_uL_min = df_flow['uL/min'].rolling(
+                window=flow_moving_average).mean()
+            flow_s = df_flow['s'].rolling(window=flow_moving_average).mean()
+
+        if pressure_moving_average > 0:
+            pressure_mbar = df_pressure[pressure_sensor_value_kPa].rolling(
+                window=pressure_moving_average).mean()
+            pressure_s = df_pressure['s'].rolling(
+                window=pressure_moving_average).mean()
+
+        interpolated_pressure = np.interp(flow_s, pressure_s, pressure_mbar)
+        # Create a figure and axis
+        fig, ax1 = plt.subplots(figsize=(12.0, 6.0))
+
+        # Plot pressure vs. time on the left y-axis (ax1)
+        ax1.scatter(interpolated_pressure, flow_uL_min, color='blue')
+        ax1.set_xlabel('Pressure [mbar]')
+        ax1.set_ylabel('Flow [uL/min]')
+
+        # Display the plot
+        plt.title('Pressure and FLG Flow with Interpolated Time')
+        if (save):
+            save_directory = self.exp_name
+            save_path = os.path.join(
+                save_directory, f"flg_flow_vs_pressure_{pressure_sensor_value}0mbar.png")
             plt.savefig(save_path)
         plt.show()
 
@@ -1250,30 +1536,27 @@ class Plot:
         calibraton_path = r'Calibration_' + self.exp_folder
         print(calibraton_path)
         cal_plot = Plot(calibraton_path)
-        try:
-            filepath = cal_plot.folder_path + r'\voltages_saleae\analog_voltages\analog.csv'
 
-            df = pd.read_csv(filepath)
+        filepath = cal_plot.folder_path + r'\voltages_saleae\analog_voltages\analog.csv'
 
-            # Extract columns for time and channels
-            time = df[channel_dict['Time [s]'][0]]
-            channel_0 = df[channel_dict['Channel 0'][0]]
-            channel_1 = df[channel_dict['Channel 1'][0]]
-            channel_2 = df[channel_dict['Channel 2'][0]]
-            channel_3 = df[channel_dict['Channel 3'][0]]
+        df = pd.read_csv(filepath)
 
-            # Calculate the average of each channel
-            channel_0_average = sum(channel_0) / len(channel_0)
-            channel_1_average = sum(channel_1) / len(channel_1)
-            channel_2_average = sum(channel_2) / len(channel_2)
-            channel_3_average = sum(channel_3) / len(channel_3)
+        # Extract columns for time and channels
+        time = df[channel_dict['Time [s]'][0]]
+        channel_0 = df[channel_dict['Channel 0'][0]]
+        channel_1 = df[channel_dict['Channel 1'][0]]
+        channel_2 = df[channel_dict['Channel 2'][0]]
+        channel_3 = df[channel_dict['Channel 3'][0]]
 
-            offset = [channel_0_average, channel_1_average,
-                      channel_2_average, channel_3_average]
+        # Calculate the average of each channel
+        channel_0_average = sum(channel_0) / len(channel_0)
+        channel_1_average = sum(channel_1) / len(channel_1)
+        channel_2_average = sum(channel_2) / len(channel_2)
+        channel_3_average = sum(channel_3) / len(channel_3)
 
-        except Exception as e:
-            print("Error Get calibration offset: ", e)
-            return
+        offset = [channel_0_average, channel_1_average,
+                  channel_2_average, channel_3_average]
+
         cal_plot.calibration_mean = offset
         if show_plot:
             cal_plot.channels_vs_time(save=save, moving_average=0)
@@ -1318,8 +1601,8 @@ class Plot:
                 time, channel_1, label=channel_dict['Channel 1'][2], alpha=alpha, color=channel_dict['Channel 1'][1])
             plt.plot(
                 time, channel_2, label=channel_dict['Channel 2'][2], alpha=alpha, color=channel_dict['Channel 2'][1])
-            plt.plot(
-                time, channel_3, label=channel_dict['Channel 3'][2], alpha=alpha, color=channel_dict['Channel 3'][1])
+            # plt.plot(
+            #     time, channel_3, label=channel_dict['Channel 3'][2], alpha=alpha, color=channel_dict['Channel 3'][1])
 
             # # Plot the offeset values
             if zero_difference != []:
@@ -1490,72 +1773,149 @@ def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
         plt.show()
 
 
+def join_all_p_vs_sls_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=7, invert_flow=False, save=None, show_plot=True):
+    q_20cm = pd.read_csv(cv_20cm.folder_path +
+                         r'\flow_sls\sls_flow_measurments.csv')
+    q_30cm = pd.read_csv(cv_30cm.folder_path +
+                         r'\flow_sls\sls_flow_measurments.csv')
+    q_40cm = pd.read_csv(cv_40cm.folder_path +
+                         r'\flow_sls\sls_flow_measurments.csv')
+    q_50cm = pd.read_csv(cv_50cm.folder_path +
+                         r'\flow_sls\sls_flow_measurments.csv')
+    if invert_flow:
+        q_20cm['mL/min'] = [-x for x in q_20cm['mL/min']]
+        q_30cm['mL/min'] = [-x for x in q_30cm['mL/min']]
+        q_40cm['mL/min'] = [-x for x in q_40cm['mL/min']]
+        q_50cm['mL/min'] = [-x for x in q_50cm['mL/min']]
+
+    p_20cm = pd.read_csv(
+        cv_20cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    p_30cm = pd.read_csv(
+        cv_30cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    p_40cm = pd.read_csv(
+        cv_40cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    p_50cm = pd.read_csv(
+        cv_50cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+
+    interpolated_p_20cm = np.interp(
+        q_20cm['s'], p_20cm['s'], p_20cm[f'delta_p_{dp_sensor}'])
+    interpolated_p_30cm = np.interp(
+        q_30cm['s'], p_30cm['s'], p_30cm[f'delta_p_{dp_sensor}'])
+    interpolated_p_40cm = np.interp(
+        q_40cm['s'], p_40cm['s'], p_40cm[f'delta_p_{dp_sensor}'])
+    interpolated_p_50cm = np.interp(
+        q_50cm['s'], p_50cm['s'], p_50cm[f'delta_p_{dp_sensor}'])
+
+    plt.scatter(interpolated_p_20cm, q_20cm['mL/min'], label='20cm')
+    plt.scatter(interpolated_p_30cm, q_30cm['mL/min'], label='30cm')
+    plt.scatter(interpolated_p_40cm, q_40cm['mL/min'], label='40cm')
+    plt.scatter(interpolated_p_50cm, q_50cm['mL/min'], label='50cm')
+    plt.xlabel('Pressure [mbar]')
+    plt.ylabel('Flow [mL/min]')
+    plt.title(f'Pressure with {dp_sensor}kpa Sensor and SLS Flow Sensor',)
+    plt.legend()
+    if show_plot:
+        plt.show()
+
+
+def join_all_p_vs_flg_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=7, invert_flow=False, save=None, show_plot=True):
+    q_20cm = pd.read_csv(cv_20cm.folder_path +
+                         r'\micro_flow_flg\micro_flow.csv')
+    q_30cm = pd.read_csv(cv_30cm.folder_path +
+                         r'\micro_flow_flg\micro_flow.csv')
+    q_40cm = pd.read_csv(cv_40cm.folder_path +
+                         r'\micro_flow_flg\micro_flow.csv')
+    q_50cm = pd.read_csv(cv_50cm.folder_path +
+                         r'\micro_flow_flg\micro_flow.csv')
+
+    if invert_flow:
+        q_20cm['mL/min'] = [-x for x in q_20cm['mL/min']]
+        q_30cm['mL/min'] = [-x for x in q_30cm['mL/min']]
+        q_40cm['mL/min'] = [-x for x in q_40cm['mL/min']]
+        q_50cm['mL/min'] = [-x for x in q_50cm['mL/min']]
+
+    p_20cm = pd.read_csv(
+        cv_20cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    p_30cm = pd.read_csv(
+        cv_30cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    p_40cm = pd.read_csv(
+        cv_40cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    p_50cm = pd.read_csv(
+        cv_50cm.folder_path + r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+
+    interpolated_p_20cm = np.interp(
+        q_20cm['s'], p_20cm['s'], p_20cm[f'delta_p_{dp_sensor}'])
+    interpolated_p_30cm = np.interp(
+        q_30cm['s'], p_30cm['s'], p_30cm[f'delta_p_{dp_sensor}'])
+    interpolated_p_40cm = np.interp(
+        q_40cm['s'], p_40cm['s'], p_40cm[f'delta_p_{dp_sensor}'])
+    interpolated_p_50cm = np.interp(
+        q_50cm['s'], p_50cm['s'], p_50cm[f'delta_p_{dp_sensor}'])
+
+    plt.scatter(interpolated_p_20cm, q_20cm['uL/min'], label='20cm')
+    plt.scatter(interpolated_p_30cm, q_30cm['uL/min'], label='30cm')
+    plt.scatter(interpolated_p_40cm, q_40cm['uL/min'], label='40cm')
+    plt.scatter(interpolated_p_50cm, q_50cm['uL/min'], label='50cm')
+    plt.xlabel('Pressure [mbar]')
+    plt.ylabel('Flow [uL/min]')
+    plt.title(f'Pressure with {dp_sensor}kpa Sensor and FLG Flow Sensor ',)
+    plt.legend()
+    if show_plot:
+        plt.show()
+
+
 if __name__ == "__main__":
-    # folder_path = r'FN-1_8-TUBE_++_pt_18'
-    # folder_path = r'FN-1_8-TUBE_--_pt_18'
-    # plot = Plot(folder_path)
 
-    quadrant_1 = Plot('FN-1_8-TUBE_++_pt_15')
-    quadrant_2 = Plot('FN-1_8-TUBE_+-_pt_15')
-    quadrant_3 = Plot('FN-1_8-TUBE_-+_pt_15')
-    quadrant_4 = Plot('FN-1_8-TUBE_--_pt_15')
-
+    # cv_20cm = Plot(r'CV2-20cm')
+    # cv_30cm = Plot(r'CV2-30cm')
+    # cv_40cm = Plot(r'CV2-40cm')
+    # cv_50cm = Plot(r'CV2-50cm')
     save = True
     moving_average = 0
     show_plot = True
 
-# # 1. plot the recorded absolute pressures
-#     plot.double_pressure_controller_command_overview(
-#         save, moving_average, nb_controllers=2, show_plot=show_plot)
+    # join_all_p_vs_sls_q_cv_lengths(
+    #     cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=25, invert_flow=True, save=None, show_plot=True)
+    # join_all_p_vs_flg_q_cv_lengths(
+    #     cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=25, invert_flow=False, save=None, show_plot=True)
+    plot = Plot(r'CV2-20cm')
+
+
+# # 1. plot the commanded pressure values
+#     plot.single_pressure_controller_command_overview(
+#         save, moving_average, nb_controllers=1, show_plot=show_plot)
 
 # # 2. get the calibration offset
 #     plot.calibration_mean = plot.get_channels_calibration_offset(
 #         save=save, show_plot=show_plot)
 
-# # (2. Visualization of calibration mean in original plot)
+# # 3. Visualization of calibration mean in original plot)
 #     plot.channels_vs_time(save, moving_average=0,
 #                           plot_calibration_mean=True, show_plot=show_plot)
-#     # check that the subratction was done correctly
 
-# # 3. Zero the pressure
+# # 4. Zero the pressure
 #     plot.zero_v_difference = plot.get_zero_voltage_difference(
 #         save, show_plot=show_plot)
 
-# # 4. Calculate the pressure with calibrated voltages offet
-#     # plot.create_pressure_7_25_25_25_v_time_csv()
-#     plot.create_pressure_7_2_25_25_v_time_csv()
+# # 5. Calculate the pressure with calibrated voltages offet
+#     plot.create_pressure_2_7_25_v_time_csv()
 
-# # 5 Plot the pressure vs time
-#     plot.pressure_vs_time_7_2_25_25(
+# # 6 Plot the pressure vs time
+#     plot.pressure_vs_time_2_7_25(
 #         save, moving_average=0, show_plot=show_plot)
 
-# # 6. Plot interpolated difference in pressure
-#     plot.p1_p2_dp(save, dp_sensor=2, show_plot=show_plot)
-#     # plot.p1_p2_dp_3D(save)
+# # 7. plot the sls and uflg flow measurements
+    # plot.sls_flow_measurements(
+    #     save, moving_average, show_plot=show_plot, invert_flow=True)
+#     plot.flg_flow_measurements(save, moving_average=10, show_plot=show_plot)
 
-# 7. Plot all flow measurements in one graph
-    join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
-                          quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
+# # 8. plot the interpolated flow vs pressure
+    plot.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
+                                                          pressure_moving_average=0, pressure_sensor_value=25)
+#     plot.flg_flow_vs_pressure(save, flow_moving_average=0, invert_flow=False,
+#                               pressure_moving_average=0, pressure_sensor_value=7)
+
+# 9. Combine all of them in the same plot
 
 
-# 6. Averaged over time window to plot averaged delta p
-
-    # plot.calibration_mean = plot.get_channels_calibration_offset(save=save)
-
-    # plot.single_set_pressure_vs_time(save=True)
-    # plot.double_pressure_controller_command_overview(
-    #     save=True, moving_average=0, nb_controllers=2)
-    # plot.single_measured_pressure_vs_time(
-    #     save=True, moving_average=0, zoomed=False, nb_controllers=1)  # do moving average of 1second or half a second
-
-    # # plot.flow_measurements(save, moving_average=0)
-    # plot.channels_vs_time(save, moving_average=0)
-    # plot.create_pressure_vs_time()
-    # plot.pressure_vs_time_2_7_25(save, moving_average=0)
-    # plot.pressure_vs_time_7_25_25_25(save, moving_average=0)
-
-    # pressure_sensor_value = 2
-    # plot.flow_vs_pressure_time(
-    # save, flow_moving_average=10, pressure_moving_average=10, pressure_sensor_value=pressure_sensor_value)
-    # plot.flow_vs_pressure(save, flow_moving_average=0, pressure_moving_average=0,
-    #   pressure_sensor_value=pressure_sensor_value)  # make a color bar
+# 7. Combine all the string into the same plot
