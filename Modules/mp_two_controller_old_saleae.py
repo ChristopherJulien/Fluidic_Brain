@@ -19,7 +19,7 @@ import json
 import os
 
 # Calibration
-calibration_flag = 1
+calibration_flag = 0
 
 micro_flag = False
 calibration_folder = 'Calibration_' if calibration_flag else ''
@@ -63,7 +63,7 @@ vl_init = ''
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # exp_folder = ("{:s}Test++".format(
 # calibration_folder))
-exp_folder = ("{:s}TES".format(
+exp_folder = ("{:s}CV2_FN-1_8-TUBE_-+_pt_30_stp20".format(
     calibration_folder))
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

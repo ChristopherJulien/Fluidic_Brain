@@ -1910,6 +1910,52 @@ class Plot:
             plt.show()
 
 
+def join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sensor=7, save=None, show_plot=True):
+    # Assuming you have a 3D dataset with x, y, and z values
+    df_1 = pd.read_csv(quadrant_1.folder_path +
+                       r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    df_2 = pd.read_csv(quadrant_2.folder_path +
+                       r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    df_3 = pd.read_csv(quadrant_3.folder_path +
+                       r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+    df_4 = pd.read_csv(quadrant_4.folder_path +
+                       r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
+
+    combined_df = pd.concat([df_1, df_2, df_3, df_4], ignore_index=True)
+
+    # Create a 3D figure
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+    x = combined_df['resev_n1_25']
+    y = combined_df['resev_n2_25']
+    z = combined_df[f'delta_p_{dp_sensor}']
+    # Use the same column for color mapping
+    c = combined_df[f'delta_p_{dp_sensor}']
+
+    # Create a 3D scatter plot with color mapping
+    scatter = ax.scatter(x, y, z, c=c, cmap='viridis')
+
+    ax.set_xlabel('Pressure Node 1 [mbar]', fontsize=14)
+    ax.set_ylabel('Pressure Node 2 [mbar]', fontsize=14)
+    ax.set_zlabel(f'Delta P (Sensor {dp_sensor} [mbar])', fontsize=14)
+    ax.set_title(
+        '3D Scatter Plot of P1, P2, and dP with Color Mapping', fontsize=16)
+
+    # Customize the legend
+    cbar = fig.colorbar(
+        scatter, ax=ax, label=f'Delta P (Sensor {dp_sensor} [mbar])', pad=0.1)
+    cbar.ax.tick_params(labelsize=12)
+
+    # if save:
+    #     save_directory = self.exp_name
+    #     save_path = os.path.join(
+    #         save_directory, f"p1_p2_dp_3D{self.exp_name}.png")
+    #     plt.savefig(save_path)
+
+    plt.show()
+
+
 def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sensor=7, save=None, show_plot=True):
     df_1 = pd.read_csv(quadrant_1.folder_path +
                        r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
@@ -1955,21 +2001,21 @@ def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
 
 
 if __name__ == "__main__":
-    # folder_path = r'FN-1_8-TUBE_++_pt_30'
+    # folder_path = r'CV2_FN-1_8-TUBE_-+_pt_30_stp20'
     # plot = Plot(folder_path)
 
-    quadrant_1 = Plot('FN-1_8-TUBE_++_pt_30')
-    quadrant_2 = Plot('FN-1_8-TUBE_+-_pt_30')
-    quadrant_3 = Plot('FN-1_8-TUBE_-+_pt_30')
-    quadrant_4 = Plot('FN-1_8-TUBE_--_pt_30')
+    quadrant_1 = Plot('CV2_FN-1_8-TUBE_++_pt_30_stp20')
+    quadrant_2 = Plot('CV2_FN-1_8-TUBE_+-_pt_30_stp20')
+    quadrant_3 = Plot('CV2_FN-1_8-TUBE_-+_pt_30_stp20')
+    quadrant_4 = Plot('CV2_FN-1_8-TUBE_--_pt_30_stp20')
 
     save = True
     moving_average = 0
     show_plot = True
 
 # # 1. plot the recorded absolute pressures
-#     # plot.double_pressure_controller_command_overview(
-#     #     save, moving_average, nb_controllers=2, show_plot=show_plot)
+#     plot.double_pressure_controller_command_overview(
+#         save, moving_average, nb_controllers=2, show_plot=show_plot)
 
 # # 2. get the calibration offset
 #     plot.calibration_mean = plot.get_channels_calibration_offset_logic1(
@@ -1978,7 +2024,7 @@ if __name__ == "__main__":
 # # (2. Visualization of calibration mean in original plot)
 #     plot.channels_vs_time_logic1(save, moving_average=0,
 #                                  plot_calibration_mean=True, show_plot=show_plot)
-# #     # check that the subratction was done correctly
+#     # check that the subratction was done correctly
 
 # # 3. Zero the pressure
 #     plot.zero_v_difference = plot.get_zero_voltage_difference_logic1(
@@ -1987,13 +2033,13 @@ if __name__ == "__main__":
 # # 4. Calculate the pressure with calibrated voltages offet
 #     plot.create_pressure_7_2_25_25_v_time_csv_logic1()
 #     # plot.create_pressure_7_25_25_25_v_time_csv()
-# #     plot.create_pressure_7_2_25_25_v_time_csv()
+#     # plot.create_pressure_7_2_25_25_v_time_csv()
 
-# # # 5 Plot the pressure vs time
+# # 5 Plot the pressure vs time
 #     plot.pressure_vs_time_7_2_25_25_logic1(
 #         save, moving_average=0, show_plot=show_plot)
 
-# # # 6. Plot interpolated difference in pressure
+# # 6. Plot interpolated difference in pressure
 #     plot.p1_p2_dp(save, dp_sensor=7, show_plot=show_plot)
 #     # plot.p1_p2_dp_3D(save)
 
@@ -2001,6 +2047,9 @@ if __name__ == "__main__":
     join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
                           quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
 
+# 8. 3D plot all the quadrants
+    join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
+                          quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
 
 # 6. Averaged over time window to plot averaged delta p
 

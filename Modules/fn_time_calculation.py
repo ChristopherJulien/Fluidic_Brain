@@ -1,12 +1,12 @@
-plateau_time = 30
+plateau_time = 40
 
 start_p1 = 0
-max_p1 = 200
+max_p1 = 250
 nb_steps1 = 20
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 
 start_p2 = 0
-max_p2 = 200
+max_p2 = 250
 nb_steps2 = 20
 
 possible_p1 = abs(((max_p1-start_p1)/nb_steps1)) + 1

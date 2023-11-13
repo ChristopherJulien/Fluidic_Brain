@@ -113,10 +113,11 @@ print("Parameters Dictionary saved as JSON in 'parameters.json'")
 json_string = json.dumps(parameters_dict)
 
 # Replace these with the paths to your three Python scripts
-script1_path_saleae = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Saleae.py"
-script2_path_sls = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\SLS_1500.py"
-script3_path_double_push_pull = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\Double_Push_Pull_Pressure.py"
-script4_path_micro_flow = r"C:\Users\Julien\OneDrive - Harvard University\Documents\Fluidic_Brain\Modules\FLG_M_Plus.py"
+current_directory = os.getcwd()
+script1_path_saleae = current_directory+r"\Saleae.py"
+script2_path_sls = current_directory+r"\SLS_1500.py"
+script3_path_double_push_pull = current_directory+r"\Double_Push_Pull_Pressure.py"
+script4_path_micro_flow = current_directory+r"\FLG_M_Plus.py"
 
 # Define a function to run the scripts and pass json file as arguments to each script
 
