@@ -2004,10 +2004,10 @@ if __name__ == "__main__":
     # folder_path = r'CV2_FN-1_8-TUBE_-+_pt_30_stp20'
     # plot = Plot(folder_path)
 
-    quadrant_1 = Plot('CV2_FN-1_8-TUBE_++_pt_30_stp20')
-    quadrant_2 = Plot('CV2_FN-1_8-TUBE_+-_pt_30_stp20')
-    quadrant_3 = Plot('CV2_FN-1_8-TUBE_-+_pt_30_stp20')
-    quadrant_4 = Plot('CV2_FN-1_8-TUBE_--_pt_30_stp20')
+    quadrant_1 = Plot('FN-1_8-TUBE_++_pt_30')
+    quadrant_2 = Plot('FN-1_8-TUBE_+-_pt_30')
+    quadrant_3 = Plot('FN-1_8-TUBE_-+_pt_30')
+    quadrant_4 = Plot('FN-1_8-TUBE_--_pt_30')
 
     save = True
     moving_average = 0
@@ -2044,8 +2044,8 @@ if __name__ == "__main__":
 #     # plot.p1_p2_dp_3D(save)
 
 # 7. Plot all flow measurements in one graph
-    join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
-                          quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
+   # join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
+    # quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
 
 # 8. 3D plot all the quadrants
     join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,

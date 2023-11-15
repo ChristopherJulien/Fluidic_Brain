@@ -34,6 +34,9 @@ channel_dict = {
     "Channel 3": ('Channel 3', 'orange', 'none', 0.0),
 }
 
+viridis = cm.get_cmap('viridis', 4)  # Get 4 distinct colors from viridis
+colors = [viridis(0), viridis(1), viridis(2), viridis(3)]
+
 
 def get_path_case(case, subcase):
     print("Getting path")
@@ -1774,6 +1777,8 @@ def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
 
 
 def join_all_p_vs_sls_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=7, invert_flow=False, save=None, show_plot=True):
+    myplotparams()
+
     q_20cm = pd.read_csv(cv_20cm.folder_path +
                          r'\flow_sls\sls_flow_measurments.csv')
     q_30cm = pd.read_csv(cv_30cm.folder_path +
@@ -1806,10 +1811,15 @@ def join_all_p_vs_sls_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor
     interpolated_p_50cm = np.interp(
         q_50cm['s'], p_50cm['s'], p_50cm[f'delta_p_{dp_sensor}'])
 
-    plt.scatter(interpolated_p_20cm, q_20cm['mL/min'], label='20cm')
-    plt.scatter(interpolated_p_30cm, q_30cm['mL/min'], label='30cm')
-    plt.scatter(interpolated_p_40cm, q_40cm['mL/min'], label='40cm')
-    plt.scatter(interpolated_p_50cm, q_50cm['mL/min'], label='50cm')
+    plt.scatter(interpolated_p_20cm,
+                q_20cm['mL/min'], color=colors[3], label='20cm')
+    plt.scatter(interpolated_p_30cm,
+                q_30cm['mL/min'], color=colors[2], label='30cm')
+    # I switched the two
+    plt.scatter(interpolated_p_50cm,
+                q_50cm['mL/min'], color=colors[1], label='40cm')
+    plt.scatter(interpolated_p_40cm,
+                q_40cm['mL/min'], color=colors[0], label='50cm')
     plt.xlabel('Pressure [mbar]')
     plt.ylabel('Flow [mL/min]')
     plt.title(f'Pressure with {dp_sensor}kpa Sensor and SLS Flow Sensor',)
@@ -1819,6 +1829,8 @@ def join_all_p_vs_sls_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor
 
 
 def join_all_p_vs_flg_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=7, invert_flow=False, save=None, show_plot=True):
+    myplotparams()
+
     q_20cm = pd.read_csv(cv_20cm.folder_path +
                          r'\micro_flow_flg\micro_flow.csv')
     q_30cm = pd.read_csv(cv_30cm.folder_path +
@@ -1852,10 +1864,15 @@ def join_all_p_vs_flg_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor
     interpolated_p_50cm = np.interp(
         q_50cm['s'], p_50cm['s'], p_50cm[f'delta_p_{dp_sensor}'])
 
-    plt.scatter(interpolated_p_20cm, q_20cm['uL/min'], label='20cm')
-    plt.scatter(interpolated_p_30cm, q_30cm['uL/min'], label='30cm')
-    plt.scatter(interpolated_p_40cm, q_40cm['uL/min'], label='40cm')
-    plt.scatter(interpolated_p_50cm, q_50cm['uL/min'], label='50cm')
+    plt.scatter(interpolated_p_20cm,
+                q_20cm['uL/min'], color=colors[3], label='20cm')
+    plt.scatter(interpolated_p_30cm,
+                q_30cm['uL/min'], color=colors[2], label='30cm')
+    # I switched the two
+    plt.scatter(interpolated_p_40cm,
+                q_40cm['uL/min'], color=colors[1], label='50cm')
+    plt.scatter(interpolated_p_50cm,
+                q_50cm['uL/min'], color=colors[0], label='40cm')
     plt.xlabel('Pressure [mbar]')
     plt.ylabel('Flow [uL/min]')
     plt.title(f'Pressure with {dp_sensor}kpa Sensor and FLG Flow Sensor ',)
@@ -1864,24 +1881,31 @@ def join_all_p_vs_flg_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor
         plt.show()
 
 
+def myplotparams():
+    plt.rcParams['figure.autolayout'] = True
+    plt.rcParams['font.size'] = 12
+    plt.rcParams['legend.edgecolor'] = '1'
+    plt.rcParams['figure.figsize'] = (3, 3)
+
+
 if __name__ == "__main__":
 
-    # cv_20cm = Plot(r'CV2-20cm')
-    # cv_30cm = Plot(r'CV2-30cm')
-    # cv_40cm = Plot(r'CV2-40cm')
-    # cv_50cm = Plot(r'CV2-50cm')
+    cv_20cm = Plot(r'CV2-20cm')
+    cv_30cm = Plot(r'CV2-30cm')
+    cv_40cm = Plot(r'CV2-40cm')
+    cv_50cm = Plot(r'CV2-50cm')
     save = True
     moving_average = 0
     show_plot = True
 
-    # join_all_p_vs_sls_q_cv_lengths(
-    #     cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=25, invert_flow=True, save=None, show_plot=True)
-    # join_all_p_vs_flg_q_cv_lengths(
-    #     cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=25, invert_flow=False, save=None, show_plot=True)
-    plot_20cm = Plot(r'CV2-20cm')
-    plot_30cm = Plot(r'CV2-30cm')
-    plot_40cm = Plot(r'CV2-40cm')
-    plot_50cm = Plot(r'CV2-50cm')
+    join_all_p_vs_sls_q_cv_lengths(
+        cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=25, invert_flow=True, save=None, show_plot=True)
+    join_all_p_vs_flg_q_cv_lengths(
+        cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor=25, invert_flow=False, save=None, show_plot=True)
+    # plot_20cm = Plot(r'CV2-20cm')
+    # plot_30cm = Plot(r'CV2-30cm')
+    # plot_40cm = Plot(r'CV2-40cm')
+    # plot_50cm = Plot(r'CV2-50cm')
 
 
 # # 1. plot the commanded pressure values
@@ -1913,15 +1937,15 @@ if __name__ == "__main__":
 #     plot.flg_flow_measurements(save, moving_average=10, show_plot=show_plot)
 
 # # 8. plot the interpolated flow vs pressure
-    plot_20cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
-                                                          pressure_moving_average=0, pressure_sensor_value=25)
-    plot_30cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
-                                                          pressure_moving_average=0, pressure_sensor_value=25)
-    plot_40cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
-                                                            pressure_moving_average=0, pressure_sensor_value=25)
-    plot_50cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
-                                                            pressure_moving_average=0, pressure_sensor_value=25)
-    
+    # plot_20cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
+    #                                                            pressure_moving_average=0, pressure_sensor_value=25)
+    # plot_30cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
+    #                                                            pressure_moving_average=0, pressure_sensor_value=25)
+    # plot_40cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
+    #                                                            pressure_moving_average=0, pressure_sensor_value=25)
+    # plot_50cm.sls_flow_vs_pressure_with_two_linear_regressions(save, flow_moving_average=0, invert_flow=True,
+    #                                                            pressure_moving_average=0, pressure_sensor_value=25)
+
 #     plot.flg_flow_vs_pressure(save, flow_moving_average=0, invert_flow=False,
 #                               pressure_moving_average=0, pressure_sensor_value=7)
 
