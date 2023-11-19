@@ -39,7 +39,7 @@ nb_steps1 = 20 if not calibration_flag else 10
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 
 start_p2 = 0 if not calibration_flag else 0
-max_p2 = 200 if not calibration_flag else 10
+max_p2 = -200 if not calibration_flag else 10
 nb_steps2 = 20 if not calibration_flag else 10
 
 # Dont matter for mp_two_controller
@@ -63,7 +63,7 @@ vl_init = ''
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # exp_folder = ("{:s}Test++".format(
 # calibration_folder))
-exp_folder = ("{:s}CV2_FN-1_8-TUBE_-+_pt_30_stp20".format(
+exp_folder = ("{:s}ASYM_CV2_FN-1_8-TUBE_--_pt_30_stp20".format(
     calibration_folder))
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1812,14 +1812,14 @@ def join_all_p_vs_sls_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor
         q_50cm['s'], p_50cm['s'], p_50cm[f'delta_p_{dp_sensor}'])
 
     plt.scatter(interpolated_p_20cm,
-                q_20cm['mL/min'], color=colors[3], label='20cm')
+                q_20cm['mL/min'], color=colors[3], label='20cm', s=5)
     plt.scatter(interpolated_p_30cm,
-                q_30cm['mL/min'], color=colors[2], label='30cm')
+                q_30cm['mL/min'], color=colors[2], label='30cm', s=5)
     # I switched the two
     plt.scatter(interpolated_p_50cm,
-                q_50cm['mL/min'], color=colors[1], label='40cm')
+                q_50cm['mL/min'], color=colors[1], label='40cm', s=5)
     plt.scatter(interpolated_p_40cm,
-                q_40cm['mL/min'], color=colors[0], label='50cm')
+                q_40cm['mL/min'], color=colors[0], label='50cm', s=5)
     plt.xlabel('Pressure [mbar]')
     plt.ylabel('Flow [mL/min]')
     plt.title(f'Pressure with {dp_sensor}kpa Sensor and SLS Flow Sensor',)
@@ -1865,14 +1865,14 @@ def join_all_p_vs_flg_q_cv_lengths(cv_20cm, cv_30cm, cv_40cm, cv_50cm, dp_sensor
         q_50cm['s'], p_50cm['s'], p_50cm[f'delta_p_{dp_sensor}'])
 
     plt.scatter(interpolated_p_20cm,
-                q_20cm['uL/min'], color=colors[3], label='20cm')
+                q_20cm['uL/min'], color=colors[3], label='20cm', s=5)
     plt.scatter(interpolated_p_30cm,
-                q_30cm['uL/min'], color=colors[2], label='30cm')
+                q_30cm['uL/min'], color=colors[2], label='30cm', s=5)
     # I switched the two
-    plt.scatter(interpolated_p_40cm,
-                q_40cm['uL/min'], color=colors[1], label='50cm')
     plt.scatter(interpolated_p_50cm,
-                q_50cm['uL/min'], color=colors[0], label='40cm')
+                q_50cm['uL/min'], color=colors[1], label='40cm', s=5)
+    plt.scatter(interpolated_p_40cm,
+                q_40cm['uL/min'], color=colors[0], label='50cm', s=5)
     plt.xlabel('Pressure [mbar]')
     plt.ylabel('Flow [uL/min]')
     plt.title(f'Pressure with {dp_sensor}kpa Sensor and FLG Flow Sensor ',)
@@ -1885,7 +1885,7 @@ def myplotparams():
     plt.rcParams['figure.autolayout'] = True
     plt.rcParams['font.size'] = 12
     plt.rcParams['legend.edgecolor'] = '1'
-    plt.rcParams['figure.figsize'] = (3, 3)
+    plt.rcParams['figure.figsize'] = (5, 5)
 
 
 if __name__ == "__main__":

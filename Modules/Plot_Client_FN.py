@@ -816,16 +816,16 @@ class Plot:
 
         # Change column headers to our desired names
         df.columns = ['s',
-                      'delta_p_7',
-                      'ground_p_2',
+                      'ground_p_7',
+                      'delta_p_2',
                       'resev_n1_25',
                       'resev_n2_25'
                       ]
         df.to_csv(pressure_path, index=False)
 
         # Apply voltage to pressure transfer function and times 10 to get mbar from kpa
-        df['delta_p_7'] = ((df['delta_p_7']/5) - 0.5)/0.057 * 10
-        df['ground_p_2'] = ((df['ground_p_2']/5) - 0.5)/0.2 * 10
+        df['ground_p_7'] = ((df['ground_p_7']/5) - 0.5)/0.057 * 10
+        df['delta_p_2'] = ((df['delta_p_2']/5) - 0.5)/0.2 * 10
         df['resev_n1_25'] = ((df['resev_n1_25']/5) - 0.5)/0.018 * 10
         df['resev_n2_25'] = ((df['resev_n2_25']/5) - 0.5)/0.018 * 10
 
@@ -840,8 +840,8 @@ class Plot:
         df.drop([0], axis=0, inplace=True)
 
         # Change the name of the columns
-        line_7_black = df['delta_p_7'].astype(float)
-        line_2_brown = df['ground_p_2'].astype(float)
+        line_7_black = df['ground_p_7'].astype(float)
+        line_2_brown = df['delta_p_2'].astype(float)
         line_25_red = df['resev_n1_25'].astype(float)
         line_25_orange = df['resev_n2_25'].astype(float)
 
@@ -1924,7 +1924,7 @@ def join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
     combined_df = pd.concat([df_1, df_2, df_3, df_4], ignore_index=True)
 
     # Create a 3D figure
-    fig = plt.figure(figsize=(10, 8))
+    fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, projection='3d')
 
     x = combined_df['resev_n1_25']
@@ -2001,55 +2001,68 @@ def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
 
 
 if __name__ == "__main__":
-    # folder_path = r'CV2_FN-1_8-TUBE_-+_pt_30_stp20'
-    # plot = Plot(folder_path)
+    folder_path = r'ASYM_CV2_FN-1_8-TUBE_-+_pt_30_stp20'
+    plot = Plot(folder_path)
 
-    quadrant_1 = Plot('FN-1_8-TUBE_++_pt_30')
-    quadrant_2 = Plot('FN-1_8-TUBE_+-_pt_30')
-    quadrant_3 = Plot('FN-1_8-TUBE_-+_pt_30')
-    quadrant_4 = Plot('FN-1_8-TUBE_--_pt_30')
+    # quadrant_1 = Plot('FN-1_8-TUBE_++_pt_30')
+    # quadrant_2 = Plot('FN-1_8-TUBE_+-_pt_30')
+    # quadrant_3 = Plot('FN-1_8-TUBE_-+_pt_30')
+    # quadrant_4 = Plot('FN-1_8-TUBE_--_pt_30')
 
     save = True
     moving_average = 0
     show_plot = True
+    # join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
+    #                       quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
 
-# # 1. plot the recorded absolute pressures
-#     plot.double_pressure_controller_command_overview(
-#         save, moving_average, nb_controllers=2, show_plot=show_plot)
+    # quadrant_1 = Plot('CV2_FN-1_8-TUBE_++_pt_30_stp20')
+    # quadrant_2 = Plot('CV2_FN-1_8-TUBE_+-_pt_30_stp20')
+    # quadrant_3 = Plot('CV2_FN-1_8-TUBE_-+_pt_30_stp20')
+    # quadrant_4 = Plot('CV2_FN-1_8-TUBE_--_pt_30_stp20')
 
-# # 2. get the calibration offset
-#     plot.calibration_mean = plot.get_channels_calibration_offset_logic1(
-#         save=save, show_plot=show_plot)
+    # save = True
+    # moving_average = 0
+    # show_plot = True
+    # join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
+    #                       quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
 
-# # (2. Visualization of calibration mean in original plot)
-#     plot.channels_vs_time_logic1(save, moving_average=0,
-#                                  plot_calibration_mean=True, show_plot=show_plot)
-#     # check that the subratction was done correctly
+# 1. plot the recorded absolute pressures
+    plot.double_pressure_controller_command_overview(
+        save, moving_average, nb_controllers=2, show_plot=show_plot)
 
-# # 3. Zero the pressure
-#     plot.zero_v_difference = plot.get_zero_voltage_difference_logic1(
-#         save, show_plot=show_plot)
+# 2. get the calibration offset
+    plot.calibration_mean = plot.get_channels_calibration_offset_logic1(
+        save=save, show_plot=show_plot)
 
-# # 4. Calculate the pressure with calibrated voltages offet
-#     plot.create_pressure_7_2_25_25_v_time_csv_logic1()
-#     # plot.create_pressure_7_25_25_25_v_time_csv()
-#     # plot.create_pressure_7_2_25_25_v_time_csv()
+# (2. Visualization of calibration mean in original plot)
+    plot.channels_vs_time_logic1(save, moving_average=0,
+                                 plot_calibration_mean=True, show_plot=show_plot)
+    # check that the subratction was done correctly
 
-# # 5 Plot the pressure vs time
-#     plot.pressure_vs_time_7_2_25_25_logic1(
-#         save, moving_average=0, show_plot=show_plot)
+# 3. Zero the pressure
+    plot.zero_v_difference = plot.get_zero_voltage_difference_logic1(
+        save, show_plot=show_plot)
 
-# # 6. Plot interpolated difference in pressure
-#     plot.p1_p2_dp(save, dp_sensor=7, show_plot=show_plot)
-#     # plot.p1_p2_dp_3D(save)
+# 4. Calculate the pressure with calibrated voltages offet
+    plot.create_pressure_7_2_25_25_v_time_csv_logic1()
+    # plot.create_pressure_7_25_25_25_v_time_csv()
+    # plot.create_pressure_7_2_25_25_v_time_csv()
+
+# 5 Plot the pressure vs time
+    plot.pressure_vs_time_7_2_25_25_logic1(
+        save, moving_average=0, show_plot=show_plot)
+
+# 6. Plot interpolated difference in pressure
+    plot.p1_p2_dp(save, dp_sensor=2, show_plot=show_plot)
+    # plot.p1_p2_dp_3D(save)
 
 # 7. Plot all flow measurements in one graph
-   # join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
-    # quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
+#    join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
+#     quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
 
 # 8. 3D plot all the quadrants
-    join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
-                          quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
+#     join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
+#                           quadrant_4, dp_sensor=7, save=save, show_plot=show_plot)
 
 # 6. Averaged over time window to plot averaged delta p
 
