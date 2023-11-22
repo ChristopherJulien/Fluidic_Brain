@@ -20,7 +20,6 @@ import os
 
 # Calibration
 calibration_flag = 0
-
 micro_flag = False
 calibration_folder = 'Calibration_' if calibration_flag else ''
 
@@ -34,7 +33,7 @@ nb_controllers = 2
 plateau_time = 30 if not calibration_flag else 10
 
 start_p1 = 0 if not calibration_flag else 0
-max_p1 = 200 if not calibration_flag else 10
+max_p1 = -200 if not calibration_flag else 10
 nb_steps1 = 20 if not calibration_flag else 10
 # or by number of steps: step_size = int((Pmax - Pmin) / 20.)
 
@@ -63,7 +62,7 @@ vl_init = ''
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # exp_folder = ("{:s}Test++".format(
 # calibration_folder))
-exp_folder = ("{:s}Tube_FN-1_8_+-_pt_30_stp20".format(
+exp_folder = ("{:s}Tube_FN-1_8_--_pt_30_stp20".format(
     calibration_folder))
 
 # ~~~~~~~~~~~~~~~~~~~~~~  Experiment Parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

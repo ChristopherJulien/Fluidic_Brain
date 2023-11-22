@@ -1937,9 +1937,9 @@ def join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
 
     x = combined_df['resev_n1_25']
     y = combined_df['resev_n2_25']
-    z = combined_df[f'ground_p_{dp_sensor}']
+    z = combined_df[f'delta_p_{dp_sensor}']
     # Use the same column for color mapping
-    c = combined_df[f'ground_p_{dp_sensor}']
+    c = combined_df[f'delta_p_{dp_sensor}']
 
     # Create a 3D scatter plot with color mapping
     scatter = ax.scatter(x, y, z, c=c, cmap='viridis')
@@ -1964,7 +1964,7 @@ def join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
     plt.show()
 
 
-def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sensor=7, save=None, show_plot=True):
+def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sensor=2, save=None, show_plot=True):
     myplotparams()
     df_1 = pd.read_csv(quadrant_1.folder_path +
                        r'\voltages_saleae\analog_pressures\calibrated_pressures.csv')
@@ -2010,36 +2010,31 @@ def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
 
 
 if __name__ == "__main__":
-    # folder_path = r'Tube_FN-1_8_+-_pt_30_stp20'
-    # plot = Plot(folder_path)
-
-    quadrant_1 = Plot('Tube_FN-1_8_--_pt_30_stp20')
-    quadrant_2 = Plot('Tube_FN-1_8_-+_pt_30_stp20')
-    quadrant_3 = Plot('Tube_FN-1_8_+-_pt_30_stp20')
-    quadrant_4 = Plot('Tube_FN-1_8_++_pt_30_stp20')
+    quadrant_1 = Plot(r'Tube_FN-1_8_--_pt_30_stp20')
+    quadrant_2 = Plot(r'Tube_FN-1_8_-+_pt_30_stp20')
+    quadrant_3 = Plot(r'Tube_FN-1_8_+-_pt_30_stp20')
+    quadrant_4 = Plot(r'Tube_FN-1_8_++_pt_30_stp20')
 
     save = True
     moving_average = 0
     show_plot = True
-    join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
-                          quadrant_4, dp_sensor=2, save=None, show_plot=True)
-# 7. Plot all flow measurements in one graph
     # join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
-    #                       quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
-    # join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
-    #                       quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
+    #                       quadrant_4, dp_sensor=2, save=None, show_plot=True)
 
-#     # save = True
-#     # moving_average = 0
-#     # show_plot = True
-#     # join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
-#     #                       quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
+    join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
+                          quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
 
-#     # quadrant_1 = Plot('CV2_FN-1_8-TUBE_++_pt_30_stp20')
-#     # quadrant_2 = Plot('CV2_FN-1_8-TUBE_+-_pt_30_stp20')
-#     # quadrant_3 = Plot('CV2_FN-1_8-TUBE_-+_pt_30_stp20')
-#     # quadrant_4 = Plot('CV2_FN-1_8-TUBE_--_pt_30_stp20')
+    # quadrant_1 = Plot('CV2_FN-1_8-TUBE_++_pt_30_stp20')
+    # quadrant_2 = Plot('CV2_FN-1_8-TUBE_+-_pt_30_stp20')
+    # quadrant_3 = Plot('CV2_FN-1_8-TUBE_-+_pt_30_stp20')
+    # quadrant_4 = Plot('CV2_FN-1_8-TUBE_--_pt_30_stp20')
 
+#     folder_path = r'Tube_FN-1_8_--_pt_30_stp20'
+#     plot = Plot(folder_path)
+
+#     save = True
+#     moving_average = 0
+#     show_plot = True
 # # 1. plot the recorded absolute pressures
 #     plot.double_pressure_controller_command_overview(
 #         save, moving_average, nb_controllers=2, show_plot=show_plot)
