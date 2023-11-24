@@ -2009,6 +2009,45 @@ def join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sen
         plt.show()
 
 
+def join_all_set_pressure_controller(quadrant_1, quadrant_2, quadrant_3, quadrant_4, dp_sensor=2, save=None, show_plot=True):
+    myplotparams()
+    df_1 = pd.read_csv(quadrant_1.folder_path +
+                       r'\pressure_ramp_flg/pressure_measurements.csv')
+    df_2 = pd.read_csv(quadrant_2.folder_path +
+                       r'\pressure_ramp_flg/pressure_measurements.csv')
+    df_3 = pd.read_csv(quadrant_3.folder_path +
+                       r'\pressure_ramp_flg/pressure_measurements.csv')
+    df_4 = pd.read_csv(quadrant_4.folder_path +
+                       r'\pressure_ramp_flg/pressure_measurements.csv')
+
+    combined_df = pd.concat([df_1, df_2, df_3, df_4], ignore_index=True)
+    plt.scatter(combined_df['mbar_p1'], combined_df['mbar_p2'], c=combined_df['s'],
+                cmap='GnBu')
+    plt.autoscale(axis='y')
+    plt.xlabel('Pressure Controller 1 [mbar]', fontsize=20)
+    plt.ylabel('Pressure Controller 2 [mbar]', fontsize=20)
+    plt.colorbar(label='Time [s]')
+    plt.title('Commanded vs Measured Pressure')
+    plt.tick_params(axis='both', which='major', labelsize=16)
+
+    # Customize the spines
+    ax = plt.gca()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_linewidth(0.5)
+    ax.spines['bottom'].set_linewidth(0.5)
+    plt.grid(color='gray', linestyle='--', linewidth=0.5)
+
+    # Customize the legend
+    plt.rcParams['figure.autolayout'] = True
+    plt.rcParams['font.size'] = 9
+    plt.rcParams['legend.edgecolor'] = '1'
+    plt.legend(fontsize=12, frameon=False)
+
+    if show_plot:
+        plt.show()
+
+
 if __name__ == "__main__":
     quadrant_1 = Plot(r'Tube_FN-1_8_--_pt_30_stp20')
     quadrant_2 = Plot(r'Tube_FN-1_8_-+_pt_30_stp20')
@@ -2021,8 +2060,10 @@ if __name__ == "__main__":
     # join_all_dp_quadrants(quadrant_1, quadrant_2, quadrant_3,
     #                       quadrant_4, dp_sensor=2, save=None, show_plot=True)
 
-    join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
-                          quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
+    join_all_set_pressure_controller(quadrant_1, quadrant_2, quadrant_3,
+                                     quadrant_4, dp_sensor=2, save=None, show_plot=True)
+    # join_all_dp_3D_logic1(quadrant_1, quadrant_2, quadrant_3,
+    #                       quadrant_4, dp_sensor=2, save=save, show_plot=show_plot)
 
     # quadrant_1 = Plot('CV2_FN-1_8-TUBE_++_pt_30_stp20')
     # quadrant_2 = Plot('CV2_FN-1_8-TUBE_+-_pt_30_stp20')
